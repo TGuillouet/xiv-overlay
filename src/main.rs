@@ -8,7 +8,6 @@ use webkit2gtk::{
 
 fn set_visual(window: &gtk::Window, _screen: Option<&gdk::Screen>) {
     if let Some(screen) = window.screen() {
-        println!("{:?}", screen);
         if let Some(ref visual) = screen.rgba_visual() {
             window.set_visual(Some(visual)); // crucial for transparency
         }
@@ -24,10 +23,10 @@ fn main() {
     window.set_app_paintable(true);
 
     window.connect_screen_changed(set_visual);
-    window.connect_draw(|window, ctx| {
+    window.connect_draw(|_window, ctx| {
         ctx.set_source_rgba(1.0, 0.0, 0.0, 0.0);
         ctx.set_operator(cairo::Operator::Screen);
-        ctx.paint();
+        let _ = ctx.paint();
         Inhibit(false)
     });
 
