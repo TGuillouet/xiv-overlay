@@ -33,7 +33,6 @@ fn main() {
     let context = WebContext::default().unwrap();
     context.set_web_extensions_directory("../webkit2gtk-webextension-rs/example/target/debug/");
 
-    #[cfg(not(feature = "v2_6"))]
     let webview = WebView::with_context(&context);
     webview.load_uri("http://proxy.iinact.com/overlay/skyline/?OVERLAY_WS=ws://127.0.0.1:10501/ws");
     webview.set_background_color(&RGBA::new(0.0, 0.0, 0.0, 0.0));
