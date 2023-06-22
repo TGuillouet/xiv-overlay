@@ -1,13 +1,14 @@
 use gtk::prelude::ContainerExt;
+use gtk::traits::GtkWindowExt;
 use gtk::{Inhibit, Window, WindowType, traits::WidgetExt};
 use gdk::RGBA;
 use webkit2gtk::{
-    traits::{SettingsExt, WebContextExt, WebViewExt},
+    traits::{SettingsExt, WebViewExt},
     WebContext, WebView,
 };
 
 fn set_visual(window: &gtk::Window, _screen: Option<&gdk::Screen>) {
-    if let Some(screen) = window.screen() {
+    if let Some(screen) = GtkWindowExt::screen(window) {
         if let Some(ref visual) = screen.rgba_visual() {
             window.set_visual(Some(visual)); // crucial for transparency
         }
@@ -15,6 +16,8 @@ fn set_visual(window: &gtk::Window, _screen: Option<&gdk::Screen>) {
 }
 
 fn main() {
+    // TODO: Parse the configuration
+
     gtk::init().unwrap();
 
     let window = Window::new(WindowType::Toplevel);
@@ -30,8 +33,12 @@ fn main() {
         Inhibit(false)
     });
 
+    // Display or not the title bar
+    // window.set_decorated(false);
+
+    // TODO: Clickthrough (with cairo)
+
     let context = WebContext::default().unwrap();
-    context.set_web_extensions_directory("../webkit2gtk-webextension-rs/example/target/debug/");
 
     let webview = WebView::with_context(&context);
     webview.load_uri("http://proxy.iinact.com/overlay/skyline/?OVERLAY_WS=ws://127.0.0.1:10501/ws");
