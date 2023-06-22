@@ -36,8 +36,6 @@ fn main() {
     // Display or not the title bar
     // window.set_decorated(false);
 
-    // TODO: Clickthrough (with cairo)
-
     let context = WebContext::default().unwrap();
 
     let webview = WebView::with_context(&context);
@@ -58,7 +56,11 @@ fn main() {
         Inhibit(false)
     });
 
-
+    // TODO: Do that if clickthrought
+    let gdk_window = window.window()
+        .expect("Could not fetch the gdk window");
+    let region = cairo::Region::create();
+    gdk_window.input_shape_combine_region(&region, 0, 0);
 
     gtk::main();
 }
