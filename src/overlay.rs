@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::layout_config::LayoutConfig;
 
 use gtk::prelude::ContainerExt;
 use gtk::traits::GtkWindowExt;
@@ -17,9 +17,7 @@ fn set_visual(window: &gtk::Window, _screen: Option<&gdk::Screen>) {
     }
 }
 
-pub fn show_overlay(config: &Config) {
-    gtk::init().unwrap();
-
+pub fn show_overlay(config: &LayoutConfig) {
     let window = Window::new(WindowType::Toplevel);
     set_visual(&window, None);
 
@@ -66,6 +64,4 @@ pub fn show_overlay(config: &Config) {
         gtk::main_quit();
         Inhibit(false)
     });
-
-    gtk::main();
 }

@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct Config {
+pub struct LayoutConfig {
     url: String,
     x: i32,
     y: i32,
@@ -11,8 +11,8 @@ pub struct Config {
     decorated: bool
 }
 
-impl Config {
-    pub fn from_file(file_path: impl Into<String>) -> Result<Config, serde_yaml::Error> {
+impl LayoutConfig {
+    pub fn from_file(file_path: impl Into<String>) -> Result<LayoutConfig, serde_yaml::Error> {
         let file_content = std::fs::read_to_string(&file_path.into());
         
         match file_content {
