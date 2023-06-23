@@ -32,6 +32,11 @@ fn main() {
     window.set_app_paintable(true);
     window.set_decorated(config.is_decoraded());
     window.set_keep_above(true);
+    window.set_size_request(
+        config.width(), 
+        config.height()
+    );
+    window.move_(config.x(), config.y());
 
     window.connect_screen_changed(set_visual);
     window.connect_draw(|_window, ctx| {
@@ -56,18 +61,9 @@ fn main() {
     
     window.show_all();
     
-    let gdk_window = window.window()
-        .expect("Could not fetch the gdk window");
-    gdk_window.move_(
-        config.x(), 
-        config.y(), 
-    );
-    gdk_window.resize(
-        config.width(), 
-        config.height()
-    );
-        
     if config.is_clickthrough() {
+        let gdk_window = window.window()
+            .expect("Could not fetch the gdk window");
         let region = cairo::Region::create();
         gdk_window.input_shape_combine_region(&region, 0, 0);
     }

@@ -30,15 +30,15 @@ impl Config {
     }
 
     pub fn y(&self) -> i32 {
-        self.x
+        self.y
     }
     
     pub fn width(&self) -> i32 {
-        self.x
+        self.width
     }
     
     pub fn height(&self) -> i32 {
-        self.x
+        self.height
     }
 
     pub fn is_decoraded(&self) -> bool {
