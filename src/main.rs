@@ -43,7 +43,7 @@ fn main() {
     let context = WebContext::default().unwrap();
 
     let webview = WebView::with_context(&context);
-    webview.load_uri("http://proxy.iinact.com/overlay/skyline/?OVERLAY_WS=ws://127.0.0.1:10501/ws");
+    webview.load_uri(&config.url());
     webview.set_background_color(&RGBA::new(0.0, 0.0, 0.0, 0.0));
     window.add(&webview);
 

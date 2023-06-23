@@ -21,6 +21,10 @@ impl Config {
         }
     }
 
+    pub fn url(&self) -> String {
+        self.url.clone()
+    }
+
     pub fn x(&self) -> i32 {
         self.x
     }
