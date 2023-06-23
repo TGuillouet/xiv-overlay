@@ -1,20 +1,36 @@
+use crate::app_config::AppConfig;
 use crate::layout_config::LayoutConfig;
 
 use gtk::prelude::*;
 use gtk::{Window, WindowType, traits::WidgetExt};
 
-fn create_and_fill_model() -> gtk::TreeStore {
-    // Creation of a model with two rows.
-    let model = gtk::TreeStore::new(&[u32::static_type(), String::static_type()]);
-
-    // Filling up the tree view.
-    let entries = &["Michel", "Sara", "Liam", "Zelda", "Neo", "Octopus master"];
-    for (i, entry) in entries.iter().enumerate() {
-        let iter = model.insert_with_values(None, None, &[(1, &entry)]);
-
-        for item  in &["Test 1", "Test 2"] {
-            model.insert_with_values(Some(&iter), None, &[(1, &item)]);
+fn load_layouts(config: &AppConfig) -> Vec<LayoutConfig> {
+    let layout_config_path = config.layouts_config_path();
+    let mut layout_configs: Vec<LayoutConfig> = Vec::new();
+    let read_result = std::fs::read_dir(layout_config_path).expect("Could not read the layouts path");
+    for file_result in read_result {
+        match file_result {
+            Ok(file) => {
+                if let Ok(config) = LayoutConfig::from_file(file.path().to_str().unwrap().to_string()) {
+                    layout_configs.push(
+                        config
+                    );
+                }
+            },
+            Err(_) => {},
         }
+    }
+    layout_configs
+}
+
+fn create_and_fill_model(config: &AppConfig) -> gtk::TreeStore {
+    // Creation of a model with two rows.
+    let model = gtk::TreeStore::new(&[String::static_type()]);
+
+    let configs = load_layouts(config);
+
+    for entry in configs.iter() {
+        let iter = model.insert_with_values(None, None, &[(0, &entry.name())]);
     }
     model
 }
@@ -29,17 +45,15 @@ fn append_column(tree: &gtk::TreeView, id: i32) {
     tree.append_column(&column);
 }
 
-fn create_sidebar(config: &LayoutConfig) -> gtk::Frame {
+fn create_sidebar(config: &AppConfig) -> gtk::Frame {
     let sidebar_frame = gtk::Frame::new(None);
     sidebar_frame.set_size_request(200, 700);
 
-    // TODO: Load the currently created layouts
-
     let treeview = gtk::TreeView::new();
     treeview.set_headers_visible(false);
-    append_column(&treeview, 1);
+    append_column(&treeview, 0);
 
-    let model = create_and_fill_model();
+    let model = create_and_fill_model(config);
 
     treeview.set_model(Some(&model));
 
@@ -48,7 +62,7 @@ fn create_sidebar(config: &LayoutConfig) -> gtk::Frame {
     sidebar_frame
 }
 
-pub fn show_app(config: &LayoutConfig) {
+pub fn show_app(config: &AppConfig) {
     let window = Window::new(WindowType::Toplevel);
     window.set_size_request(1000, 700);
 

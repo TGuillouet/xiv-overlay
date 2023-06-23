@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct LayoutConfig {
+    name: String,
     url: String,
     x: i32,
     y: i32,
@@ -19,6 +20,10 @@ impl LayoutConfig {
             Ok(content) => serde_yaml::from_str(content.as_str()),
             Err(_) => panic!("Could not parse the configuration")
         }
+    }
+
+    pub fn name(&self) -> String {
+        self.name.clone()
     }
 
     pub fn url(&self) -> String {
