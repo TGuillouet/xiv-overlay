@@ -3,14 +3,18 @@ use crate::layout_config::LayoutConfig;
 use gtk::prelude::*;
 use gtk::{Window, WindowType, traits::WidgetExt};
 
-fn create_and_fill_model() -> gtk::ListStore {
+fn create_and_fill_model() -> gtk::TreeStore {
     // Creation of a model with two rows.
-    let model = gtk::ListStore::new(&[u32::static_type(), String::static_type()]);
+    let model = gtk::TreeStore::new(&[u32::static_type(), String::static_type()]);
 
     // Filling up the tree view.
     let entries = &["Michel", "Sara", "Liam", "Zelda", "Neo", "Octopus master"];
     for (i, entry) in entries.iter().enumerate() {
-        model.insert_with_values(Some(i.try_into().unwrap()), &[(0, &(i as u32)), (1, &entry)]);
+        let iter = model.insert_with_values(None, None, &[(1, &entry)]);
+
+        for item  in &["Test 1", "Test 2"] {
+            model.insert_with_values(Some(&iter), None, &[(1, &item)]);
+        }
     }
     model
 }
@@ -30,10 +34,9 @@ fn create_sidebar(config: &LayoutConfig) -> gtk::Frame {
     sidebar_frame.set_size_request(200, 700);
 
     // TODO: Load the currently created layouts
+
     let treeview = gtk::TreeView::new();
     treeview.set_headers_visible(false);
-
-    append_column(&treeview, 0);
     append_column(&treeview, 1);
 
     let model = create_and_fill_model();
