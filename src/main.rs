@@ -31,6 +31,7 @@ fn main() {
 
     window.set_app_paintable(true);
     window.set_decorated(config.is_decoraded());
+    window.set_keep_above(true);
 
     window.connect_screen_changed(set_visual);
     window.connect_draw(|_window, ctx| {
