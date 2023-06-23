@@ -1,3 +1,6 @@
+mod config;
+
+use config::Config;
 use gtk::prelude::ContainerExt;
 use gtk::traits::GtkWindowExt;
 use gtk::{Inhibit, Window, WindowType, traits::WidgetExt};
@@ -17,13 +20,17 @@ fn set_visual(window: &gtk::Window, _screen: Option<&gdk::Screen>) {
 
 fn main() {
     // TODO: Parse the configuration
-
+    let config = Config::from_file("./config.yaml")
+        .expect("Could not parse the configuration");
+    println!("{:?}", config);
+    
     gtk::init().unwrap();
 
     let window = Window::new(WindowType::Toplevel);
     set_visual(&window, None);
 
     window.set_app_paintable(true);
+    window.set_decorated(config.is_decoraded());
 
     window.connect_screen_changed(set_visual);
     window.connect_draw(|_window, ctx| {
@@ -32,9 +39,6 @@ fn main() {
         let _ = ctx.paint();
         Inhibit(false)
     });
-
-    // Display or not the title bar
-    // window.set_decorated(false);
 
     let context = WebContext::default().unwrap();
 
@@ -51,16 +55,26 @@ fn main() {
     
     window.show_all();
     
+    let gdk_window = window.window()
+        .expect("Could not fetch the gdk window");
+    gdk_window.move_(
+        config.x(), 
+        config.y(), 
+    );
+    gdk_window.resize(
+        config.width(), 
+        config.height()
+    );
+        
+    if config.is_clickthrough() {
+        let region = cairo::Region::create();
+        gdk_window.input_shape_combine_region(&region, 0, 0);
+    }
+
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
         Inhibit(false)
     });
-
-    // TODO: Do that if clickthrought
-    let gdk_window = window.window()
-        .expect("Could not fetch the gdk window");
-    let region = cairo::Region::create();
-    gdk_window.input_shape_combine_region(&region, 0, 0);
 
     gtk::main();
 }

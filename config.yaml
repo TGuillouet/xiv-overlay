@@ -1,0 +1,7 @@
+url: test
+x: 1920
+y: 100
+width: 50
+height: 30
+clickthrough: true
+decorated: false
