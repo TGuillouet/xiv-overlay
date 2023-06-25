@@ -1,7 +1,8 @@
 use crate::app_config::AppConfig;
 use crate::layout_config::LayoutConfig;
 
-use gtk::prelude::*;
+use gdk::Screen;
+use gtk::{prelude::*, StyleContext};
 use gtk::{Window, WindowType, traits::WidgetExt};
 
 fn load_layouts(config: &AppConfig) -> Vec<LayoutConfig> {
@@ -30,7 +31,7 @@ fn create_and_fill_model(config: &AppConfig) -> gtk::TreeStore {
     let configs = load_layouts(config);
 
     for entry in configs.iter() {
-        let iter = model.insert_with_values(None, None, &[(0, &entry.name())]);
+        let _ = model.insert_with_values(None, None, &[(0, &entry.name())]); // The iterator returned will be used to handle folders
     }
     model
 }
@@ -62,9 +63,46 @@ fn create_sidebar(config: &AppConfig) -> gtk::Frame {
     sidebar_frame
 }
 
+fn display_overlay_infos(overlay_infos: &LayoutConfig) -> gtk::Widget{
+    let infos_container = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .margin(15)
+        .build();
+
+    let header = gtk::Box::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .hexpand(true)
+        .build();
+
+    let title_text = gtk::Label::builder()
+        .label(&overlay_infos.name())
+        .build();
+    title_text
+        .style_context()
+        .add_class("overlay-title");
+
+    let state_switch = gtk::Switch::builder()
+        .build();
+
+    header.add(&title_text);
+    header.pack_end(&state_switch, false, false, 0);
+
+    infos_container.add(&header);
+    infos_container.into()
+}
+
 pub fn show_app(config: &AppConfig) {
     let window = Window::new(WindowType::Toplevel);
     window.set_size_request(1000, 700);
+
+    let css_provider = gtk::CssProvider::new();
+    css_provider.load_from_path("./styles/app.css")
+        .expect("Could not load the stylesheet");
+    StyleContext::add_provider_for_screen(
+        &Screen::default().expect("Could not fetch the gdk screen"), 
+        &css_provider,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION
+    );
 
     let layout = gtk::Paned::new(gtk::Orientation::Horizontal);
     let sidebar = create_sidebar(config);
@@ -73,7 +111,16 @@ pub fn show_app(config: &AppConfig) {
     layout.pack1(&sidebar, false, false);
     layout.pack2(&app_content_frame, true, false);
 
+    let config = LayoutConfig::from_file("./config.yaml")
+        .expect("Could not parse the configuration");
+    app_content_frame.add(&display_overlay_infos(&config));
+
     window.add(&layout);
 
     window.show_all();
+
+    window.connect_delete_event(|_, _| {
+        gtk::main_quit();
+        Inhibit(false)
+    });
 }

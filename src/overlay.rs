@@ -61,7 +61,6 @@ pub fn show_overlay(config: &LayoutConfig) {
     }
 
     window.connect_delete_event(|_, _| {
-        gtk::main_quit();
         Inhibit(false)
     });
 }
