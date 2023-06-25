@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+use crate::app_config::AppConfig;
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct LayoutConfig {
     name: String,
@@ -53,4 +55,23 @@ impl LayoutConfig {
     pub fn is_clickthrough(&self) -> bool {
         self.clickthrough
     }
+}
+
+pub fn load_layouts(config: &AppConfig) -> Vec<LayoutConfig> {
+    let layout_config_path = config.layouts_config_path();
+    let mut layout_configs: Vec<LayoutConfig> = Vec::new();
+    let read_result = std::fs::read_dir(layout_config_path).expect("Could not read the layouts path");
+    for file_result in read_result {
+        match file_result {
+            Ok(file) => {
+                if let Ok(config) = LayoutConfig::from_file(file.path().to_str().unwrap().to_string()) {
+                    layout_configs.push(
+                        config
+                    );
+                }
+            },
+            Err(_) => {},
+        }
+    }
+    layout_configs
 }
