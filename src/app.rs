@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use crate::app_config::{AppConfig, self};
+use crate::app_config::{AppConfig};
 use crate::layout_config::{LayoutConfig, load_layouts};
 
+use glib::{Sender, MainContext, Priority};
 use gtk::{prelude::*};
 use gtk::{Window, WindowType, traits::WidgetExt};
 
@@ -16,6 +17,13 @@ impl App {
     }
 
     pub fn show(&self) {
+        let (sender, receiver) = MainContext::channel(Priority::default());
+        receiver.attach(None, |config| {
+            println!("{:?}", config);
+
+            glib::Continue(true)
+        });
+
         let config = LayoutConfig::from_file("./config.yaml")
             .expect("Could not parse the configuration");
 
@@ -29,7 +37,10 @@ impl App {
         layout.pack1(&sidebar, false, false);
         layout.pack2(&app_content_frame, true, false);
 
-        let overlay_widget = OverlayInfos::new(config);
+        let overlay_widget = OverlayInfos::new(
+            config,
+            sender
+        );
         app_content_frame.add(&overlay_widget.ui());
 
         window.add(&layout);
@@ -83,13 +94,15 @@ impl App {
 }
 
 struct OverlayInfos {
-    current_overlay: Arc<LayoutConfig>
+    current_overlay: LayoutConfig,
+    sender: Sender<LayoutConfig>
 }
 
 impl OverlayInfos {
-    pub fn new(layout_config: LayoutConfig) -> Self {
+    pub fn new(layout_config: LayoutConfig, sender: Sender<LayoutConfig>) -> Self {
         Self {
-            current_overlay: Arc::new(layout_config)
+            current_overlay: layout_config,
+            sender
         }
     }
 
@@ -121,7 +134,7 @@ impl OverlayInfos {
         let state_switch = gtk::Switch::builder()
             .build();
         
-        state_switch.connect_state_set(|_, new_state| {
+        state_switch.connect_state_set(move |_, new_state| {
             if new_state {
                 // Show the overlay
             } else {
