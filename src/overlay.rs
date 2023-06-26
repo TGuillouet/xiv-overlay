@@ -1,5 +1,6 @@
 use crate::layout_config::LayoutConfig;
 
+use glib::Receiver;
 use gtk::prelude::ContainerExt;
 use gtk::traits::GtkWindowExt;
 use gtk::{Inhibit, Window, WindowType, traits::WidgetExt};
@@ -17,7 +18,7 @@ fn set_visual(window: &gtk::Window, _screen: Option<&gdk::Screen>) {
     }
 }
 
-pub fn show_overlay(config: &LayoutConfig) {
+pub fn show_overlay(config: &LayoutConfig, shutdown_receiver: Receiver<bool>) {
     let window = Window::new(WindowType::Toplevel);
     set_visual(&window, None);
 
@@ -63,4 +64,12 @@ pub fn show_overlay(config: &LayoutConfig) {
     window.connect_delete_event(|_, _| {
         Inhibit(false)
     });
+
+    shutdown_receiver.attach(None, move |_| {
+        window.close();
+
+        glib::Continue(true)
+    });
+
+    // window
 }

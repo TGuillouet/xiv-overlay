@@ -1,9 +1,13 @@
+use std::collections::{HashSet, HashMap};
 use std::sync::Arc;
+use std::thread::JoinHandle;
 
 use crate::app_config::{AppConfig};
 use crate::layout_config::{LayoutConfig, load_layouts};
+use crate::overlay::show_overlay;
 
-use glib::{Sender, MainContext, Priority};
+use gio::SimpleAction;
+use glib::{Sender, MainContext, Priority, clone};
 use gtk::{prelude::*};
 use gtk::{Window, WindowType, traits::WidgetExt};
 
@@ -14,23 +18,39 @@ enum OverlaySignals {
 }
 
 pub struct App {
-    config: Arc<AppConfig>
+    config: Arc<AppConfig>,
 }
 
 impl App {
     pub fn new(app_config: AppConfig) -> Self {
-        Self { config: Arc::new(app_config) }
+        Self { 
+            config: Arc::new(app_config), 
+        }
     }
 
-    pub fn show(&self) {
+    pub fn show(&mut self) {
         let (sender, receiver) = MainContext::channel(Priority::default());
-        receiver.attach(None, |signal| {
+        let mut win_senders_map = HashMap::<String, Sender<bool>>::new();
+        receiver.attach(None, move |signal| {
             match signal {
                 OverlaySignals::ChangeActiveState(new_state, overlay_config) => {
                     if new_state {
                         println!("Activate the overlay: {}", overlay_config.name());
+                        let (win_sender, win_receiver) = MainContext::channel(Priority::default());
+                        let cloned_config = overlay_config.clone();
+
+                        win_senders_map.insert(overlay_config.name(), win_sender.clone());
+                        std::thread::spawn(move || {
+                            glib::MainContext::default().invoke(move || {
+                                show_overlay(&cloned_config.clone(), win_receiver);
+                            });
+                            0
+                        });
                     } else {
                         println!("Disable the overlay: {}", overlay_config.name());
+                        if let Some(sender) = win_senders_map.get(&overlay_config.name()) {
+                            sender.send(true).unwrap();
+                        }
                     }
                 },
                 _ => {}

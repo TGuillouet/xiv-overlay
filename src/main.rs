@@ -28,7 +28,7 @@ fn main() {
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION
     );
 
-    let app = App::new(app_config);
+    let mut app = App::new(app_config);
     app.show();
 
     gtk::main();

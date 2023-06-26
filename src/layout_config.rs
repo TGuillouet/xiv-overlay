@@ -11,7 +11,8 @@ pub struct LayoutConfig {
     width: i32,
     height: i32,
     clickthrough: bool,
-    decorated: bool
+    decorated: bool,
+    active: bool
 }
 
 impl LayoutConfig {
@@ -54,6 +55,10 @@ impl LayoutConfig {
 
     pub fn is_clickthrough(&self) -> bool {
         self.clickthrough
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.active
     }
 }
 

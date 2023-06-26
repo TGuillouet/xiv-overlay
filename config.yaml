@@ -6,3 +6,4 @@ width: 500
 height: 200
 clickthrough: true
 decorated: false
+active: true
