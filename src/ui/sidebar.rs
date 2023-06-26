@@ -20,11 +20,20 @@ impl Sidebar {
 
         let treeview = gtk::TreeView::new();
         treeview.set_headers_visible(false);
+        treeview.set_activate_on_single_click(true);
         self.append_treeview_column(&treeview, 0);
 
         let model = self.create_treeview_entries(&app_config);
 
         treeview.set_model(Some(&model));
+        treeview.connect_row_activated(|view, path, _column| {
+            let model = view.model().unwrap();
+            let iter = model.iter(path).unwrap();
+            let value = model.value(&iter, 0).get::<String>().unwrap();
+
+            // TODO: Handle the change by throwng an OverlaySignal ?
+            println!("Clicked: {value}")
+        });
 
         sidebar_frame.add(&treeview);
 
