@@ -7,6 +7,10 @@ use glib::{Sender, MainContext, Priority};
 use gtk::{prelude::*};
 use gtk::{Window, WindowType, traits::WidgetExt};
 
+enum OverlaySignals {
+    ChangeActive(bool, LayoutConfig)
+}
+
 pub struct App {
     config: Arc<AppConfig>
 }
@@ -18,8 +22,16 @@ impl App {
 
     pub fn show(&self) {
         let (sender, receiver) = MainContext::channel(Priority::default());
-        receiver.attach(None, |config| {
-            println!("{:?}", config);
+        receiver.attach(None, |signal| {
+            match signal {
+                OverlaySignals::ChangeActive(new_state, overlay_config) => {
+                    if new_state {
+                        println!("Activate the overlay: {}", overlay_config.name());
+                    } else {
+                        println!("Disable the overlay: {}", overlay_config.name());
+                    }
+                },
+            }
 
             glib::Continue(true)
         });
@@ -95,13 +107,18 @@ impl App {
 
 struct OverlayInfos {
     current_overlay: LayoutConfig,
-    sender: Sender<LayoutConfig>
+    sender: Sender<OverlaySignals>,
+    active_state_switch: gtk::Switch
 }
 
 impl OverlayInfos {
-    pub fn new(layout_config: LayoutConfig, sender: Sender<LayoutConfig>) -> Self {
+    pub fn new(layout_config: LayoutConfig, sender: Sender<OverlaySignals>) -> Self {
+        let switch = gtk::Switch::builder()
+            .build();
+        
         Self {
             current_overlay: layout_config,
+            active_state_switch: switch,
             sender
         }
     }
@@ -117,8 +134,8 @@ impl OverlayInfos {
         infos_container.add(&header);
         infos_container.into()
     }
-
-    fn create_header(&self) -> gtk::Widget {
+    
+    fn create_header<'a>(&self) -> gtk::Widget {
         let header = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .hexpand(true)
@@ -131,20 +148,17 @@ impl OverlayInfos {
             .style_context()
             .add_class("overlay-title");
     
-        let state_switch = gtk::Switch::builder()
-            .build();
         
-        state_switch.connect_state_set(move |_, new_state| {
-            if new_state {
-                // Show the overlay
-            } else {
-                // Destroy the overlay window
-            }
+        let cloned_config = self.current_overlay.clone();
+        let cloned_sender = self.sender.clone();
+        self.active_state_switch.connect_state_set(move |_, new_state| {
+            let signal = OverlaySignals::ChangeActive(new_state, cloned_config.clone());
+            cloned_sender.send(signal).unwrap();
             Inhibit(true)
         });
     
         header.add(&title_text);
-        header.pack_end(&state_switch, false, false, 0);
+        header.pack_end(&self.active_state_switch, false, false, 0);
 
         header.into()
     }
