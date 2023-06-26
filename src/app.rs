@@ -8,7 +8,9 @@ use gtk::{prelude::*};
 use gtk::{Window, WindowType, traits::WidgetExt};
 
 enum OverlaySignals {
-    ChangeActive(bool, LayoutConfig)
+    ChangeActiveState(bool, LayoutConfig),
+    Save(LayoutConfig),
+    Remove(LayoutConfig)
 }
 
 pub struct App {
@@ -24,13 +26,14 @@ impl App {
         let (sender, receiver) = MainContext::channel(Priority::default());
         receiver.attach(None, |signal| {
             match signal {
-                OverlaySignals::ChangeActive(new_state, overlay_config) => {
+                OverlaySignals::ChangeActiveState(new_state, overlay_config) => {
                     if new_state {
                         println!("Activate the overlay: {}", overlay_config.name());
                     } else {
                         println!("Disable the overlay: {}", overlay_config.name());
                     }
                 },
+                _ => {}
             }
 
             glib::Continue(true)
@@ -152,7 +155,7 @@ impl OverlayInfos {
         let cloned_config = self.current_overlay.clone();
         let cloned_sender = self.sender.clone();
         self.active_state_switch.connect_state_set(move |_, new_state| {
-            let signal = OverlaySignals::ChangeActive(new_state, cloned_config.clone());
+            let signal = OverlaySignals::ChangeActiveState(new_state, cloned_config.clone());
             cloned_sender.send(signal).unwrap();
             Inhibit(true)
         });
