@@ -2,6 +2,7 @@ mod layout_config;
 mod overlay;
 mod app;
 mod app_config;
+mod ui;
 
 use app::App;
 use gdk::Screen;
@@ -29,6 +30,7 @@ fn main() {
     );
 
     let mut app = App::new(app_config);
+    app.init();
     app.show();
 
     gtk::main();
