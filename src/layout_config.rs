@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::app_config::AppConfig;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct LayoutConfig {
     name: String,
     url: String,
@@ -62,8 +62,9 @@ impl LayoutConfig {
     }
 }
 
-pub fn load_layouts(config: &AppConfig) -> Vec<LayoutConfig> {
-    let layout_config_path = config.layouts_config_path();
+pub fn load_layouts() -> Vec<LayoutConfig> {
+    let app_config = AppConfig::default();
+    let layout_config_path = app_config.layouts_config_path();
     let mut layout_configs: Vec<LayoutConfig> = Vec::new();
     let read_result = std::fs::read_dir(layout_config_path).expect("Could not read the layouts path");
     for file_result in read_result {
@@ -79,4 +80,15 @@ pub fn load_layouts(config: &AppConfig) -> Vec<LayoutConfig> {
         }
     }
     layout_configs
+}
+
+pub fn get_layout_by_name(overlay_name: &str) -> Result<LayoutConfig, String> {
+    let overlays = load_layouts();
+    for overlay in overlays.iter() {
+        if overlay.name() == overlay_name.to_owned() {
+            return Ok(overlay.clone())
+        }
+    }
+
+    Err("Could not find the overlay !".to_owned())
 }

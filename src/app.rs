@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::app_config::{AppConfig};
-use crate::layout_config::{LayoutConfig, load_layouts};
+use crate::layout_config::LayoutConfig;
 use crate::overlay::show_overlay;
 use crate::ui::OverlaySignals;
 use crate::ui::overlay_infos::OverlayInfos;
@@ -14,7 +14,7 @@ use gtk::{Window, WindowType, traits::WidgetExt};
 
 pub struct App {
     config: Arc<AppConfig>,
-    sender: Option<Sender<OverlaySignals>>
+    sender: Option<Sender<OverlaySignals>>,
 }
 
 impl App {
@@ -60,21 +60,23 @@ impl App {
     }
 
     pub fn show(&self) {
+        let (selection_sender, selection_receiver) = MainContext::channel(Priority::default());
+        
         let window = Window::new(WindowType::Toplevel);
         window.set_size_request(1000, 700);
 
         let layout = gtk::Paned::new(gtk::Orientation::Horizontal);
-        let mut sidebar = Sidebar::new();
+        let mut sidebar = Sidebar::new(selection_sender);
         let app_content_frame = gtk::Frame::new(None);
 
         layout.pack1(&sidebar.ui(&self.config), false, false);
         layout.pack2(&app_content_frame, true, false);
 
-        let overlay_widget = OverlayInfos::new(
+        let overlay_widget = Arc::new(Mutex::new(OverlayInfos::new(
             sidebar.get_layout_at(0),
             self.sender.clone().unwrap()
-        );
-        app_content_frame.add(&overlay_widget.ui());
+        )));
+        app_content_frame.add(&overlay_widget.lock().unwrap().ui());
 
         window.add(&layout);
 
@@ -83,6 +85,27 @@ impl App {
         window.connect_delete_event(|_, _| {
             gtk::main_quit();
             Inhibit(false)
+        });
+
+        let overlay_clone = Arc::clone(&overlay_widget);
+        selection_receiver.attach(None, move |new_overlay: LayoutConfig| {
+            let mut overlay = overlay_clone.lock().unwrap();
+            
+            if overlay.is_current_overlay(&new_overlay) {
+                return glib::Continue(true);
+            }
+
+            println!("New displayed overlay {}", new_overlay.name());
+
+            for children in app_content_frame.children().iter() {
+                app_content_frame.remove(children);
+            }
+
+            overlay.set_current_overlay(new_overlay);
+            app_content_frame.add(&overlay.ui());
+            app_content_frame.show_all();
+
+            glib::Continue(true)
         });
     }
 }

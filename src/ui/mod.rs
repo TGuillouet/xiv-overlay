@@ -6,6 +6,6 @@ pub mod sidebar;
 pub enum OverlaySignals {
     ChangeActiveState(bool, LayoutConfig),
     Save(LayoutConfig),
-    Remove(LayoutConfig)
+    Remove(LayoutConfig),
 }
 

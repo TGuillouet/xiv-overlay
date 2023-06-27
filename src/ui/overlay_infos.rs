@@ -1,7 +1,7 @@
-use glib::Sender;
+use glib::{Sender, subclass::{types::ObjectSubclass, prelude::ObjectImpl}};
 use gtk::{prelude::*};
 
-use crate::layout_config::LayoutConfig;
+use crate::{layout_config::LayoutConfig};
 
 use super::OverlaySignals;
 
@@ -24,6 +24,7 @@ impl OverlayInfos {
     }
 
     pub fn ui(&self) -> gtk::Widget{
+        println!("New display {:?}", self.current_overlay);
         let infos_container = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .margin(15)
@@ -61,6 +62,16 @@ impl OverlayInfos {
         header.pack_end(&self.active_state_switch, false, false, 0);
 
         header.into()
+    }
+
+    pub fn is_current_overlay(&self, overlay: &LayoutConfig) -> bool {
+        self.current_overlay == overlay.clone()
+    }
+
+    pub fn set_current_overlay(&mut self, overlay: LayoutConfig) {
+        self.current_overlay = overlay;
+
+        // TODO: Update the bound struct
     }
 }
 
