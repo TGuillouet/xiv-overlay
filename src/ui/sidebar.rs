@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use gtk::{traits::{TreeViewExt, WidgetExt}, prelude::TreeStoreExtManual};
 
 use crate::layout_config::get_layout_by_name;
-use crate::{layout_config::{LayoutConfig, load_layouts}, app_config::AppConfig};
+use crate::{layout_config::{LayoutConfig, load_layouts}};
 
 pub struct Sidebar {
     layout_list: Vec<LayoutConfig>,
@@ -18,7 +18,7 @@ impl Sidebar {
         }
     }
 
-    pub fn ui(&mut self, app_config: &AppConfig) -> gtk::Frame {
+    pub fn ui(&mut self) -> gtk::Frame {
         let sidebar_frame = gtk::Frame::new(None);
         sidebar_frame.set_size_request(200, 700);
 
@@ -27,7 +27,7 @@ impl Sidebar {
         treeview.set_activate_on_single_click(true);
         self.append_treeview_column(&treeview, 0);
 
-        let model = self.create_treeview_entries(&app_config);
+        let model = self.create_treeview_entries();
 
         treeview.set_model(Some(&model));
         let cloned_sender = self.change_selection_sender.clone();
@@ -37,7 +37,7 @@ impl Sidebar {
             let value = model.value(&iter, 0).get::<String>().unwrap();
 
             if let Ok(overlay) = get_layout_by_name(&value) {
-                cloned_sender.send(overlay);
+                let _ = cloned_sender.send(overlay);
             }
         });
 
@@ -46,7 +46,7 @@ impl Sidebar {
         sidebar_frame
     }
 
-    fn create_treeview_entries(&mut self, app_config: &AppConfig) -> gtk::TreeStore {
+    fn create_treeview_entries(&mut self) -> gtk::TreeStore {
         // Creation of a model with two rows.
         let model = gtk::TreeStore::new(&[String::static_type()]);
 

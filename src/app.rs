@@ -69,7 +69,7 @@ impl App {
         let mut sidebar = Sidebar::new(selection_sender);
         let app_content_frame = gtk::Frame::new(None);
 
-        layout.pack1(&sidebar.ui(&self.config), false, false);
+        layout.pack1(&sidebar.ui(), false, false);
         layout.pack2(&app_content_frame, true, false);
 
         let overlay_widget = Arc::new(Mutex::new(OverlayInfos::new(

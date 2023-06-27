@@ -1,4 +1,4 @@
-use glib::{Sender, subclass::{types::ObjectSubclass, prelude::ObjectImpl}};
+use glib::Sender;
 use gtk::{prelude::*};
 
 use crate::{layout_config::LayoutConfig};
