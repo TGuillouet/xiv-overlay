@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::app_config::AppConfig;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct LayoutConfig {
     name: String,
     url: String,

@@ -73,10 +73,8 @@ impl App {
         layout.pack2(&app_content_frame, true, false);
 
         let overlay_widget = Arc::new(Mutex::new(OverlayInfos::new(
-            sidebar.get_layout_at(0),
             self.sender.clone().unwrap()
         )));
-        app_content_frame.add(&overlay_widget.lock().unwrap().ui());
 
         window.add(&layout);
 
