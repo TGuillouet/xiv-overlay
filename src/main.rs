@@ -29,9 +29,20 @@ fn main() {
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION
     );
 
-    let mut app = App::new(app_config);
-    app.init();
-    app.show();
+    let (sender, receiver) = async_channel::unbounded();
+
+    let mut app = App::new(app_config, sender.clone());
+
+    let event_handler = async move {
+        while let Ok(event) = receiver.recv().await {
+            match event {
+                app::AppAction::LoadOverlaysList => app.load_overlays_list(),
+                app::AppAction::DisplayOverlay(overlay) => app.display_overlay_details(overlay),
+            }
+        }
+    };
+
+    glib::MainContext::default().spawn_local(event_handler);
 
     gtk::main();
 }

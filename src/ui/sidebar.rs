@@ -1,64 +1,71 @@
-use glib::Sender;
+use async_channel::Sender;
 use gtk::prelude::*;
 use gtk::{traits::{TreeViewExt, WidgetExt}, prelude::TreeStoreExtManual};
 
+use crate::app::AppAction;
 use crate::layout_config::get_layout_by_name;
-use crate::{layout_config::{LayoutConfig, load_layouts}};
+use crate::layout_config::LayoutConfig;
 
 pub struct Sidebar {
-    layout_list: Vec<LayoutConfig>,
-    change_selection_sender: Sender<LayoutConfig>
+    pub frame: gtk::Frame,
+    treeview: gtk::TreeView
+    // layout_list: Vec<LayoutConfig>,
+    // change_selection_sender: Sender<LayoutConfig>
 }
 
 impl Sidebar {
-    pub fn new(change_selection_sender: Sender<LayoutConfig>) -> Self {
-        Self {
-            layout_list: Vec::new(),
-            change_selection_sender
-        }
-    }
-
-    pub fn ui(&mut self) -> gtk::Frame {
+    // pub fn new(change_selection_sender: Sender<LayoutConfig>) -> Self {
+    pub fn new(event_sender: Sender<AppAction>) -> Self {
         let sidebar_frame = gtk::Frame::new(None);
         sidebar_frame.set_size_request(200, 700);
-
+    
         let treeview = gtk::TreeView::new();
         treeview.set_headers_visible(false);
         treeview.set_activate_on_single_click(true);
-        self.append_treeview_column(&treeview, 0);
-
-        let model = self.create_treeview_entries();
-
-        treeview.set_model(Some(&model));
-        let cloned_sender = self.change_selection_sender.clone();
+        Sidebar::append_treeview_column(&treeview, 0);
+    
+        let cloned_sender = event_sender.clone();
         treeview.connect_row_activated(move |view, path, _column| {
             let model = view.model().unwrap();
             let iter = model.iter(path).unwrap();
             let value = model.value(&iter, 0).get::<String>().unwrap();
-
+    
             if let Ok(overlay) = get_layout_by_name(&value) {
-                let _ = cloned_sender.send(overlay);
+                let _ = glib::MainContext::default().block_on(cloned_sender.send(AppAction::DisplayOverlay(overlay)));
             }
         });
-
+    
         sidebar_frame.add(&treeview);
-
-        sidebar_frame
+    
+        Self {
+            frame: sidebar_frame,
+            treeview
+        }
+        // Self {
+            // layout_list: Vec::new(),
+            // change_selection_sender
+        // }
     }
 
-    fn create_treeview_entries(&mut self) -> gtk::TreeStore {
+    // pub fn ui(&mut self) -> gtk::Frame {
+    // }
+
+    pub fn display_overlays_list(&self, overlays_list: Vec<LayoutConfig>) {
+        let model = Sidebar::create_treeview_entries(overlays_list);
+        self.treeview.set_model(Some(&model));
+    }
+
+    fn create_treeview_entries(overlays_list: Vec<LayoutConfig>) -> gtk::TreeStore {
         // Creation of a model with two rows.
         let model = gtk::TreeStore::new(&[String::static_type()]);
 
-        self.layout_list = load_layouts();
-
-        for entry in self.layout_list.iter() {
+        for entry in overlays_list.iter() {
             let _ = model.insert_with_values(None, None, &[(0, &entry.name())]); // The iterator returned will be used to handle folders
         }
         model
     }
 
-    fn append_treeview_column(&self, tree: &gtk::TreeView, id: i32) {
+    fn append_treeview_column(tree: &gtk::TreeView, id: i32) {
         let column = gtk::TreeViewColumn::new();
         let cell = gtk::CellRendererText::new();
 
@@ -73,7 +80,7 @@ impl Sidebar {
         
     // }
 
-    pub fn get_layout_at(&self, index: usize) -> LayoutConfig {
-        self.layout_list.clone().into_iter().nth(index).unwrap()
-    }
+    // pub fn get_layout_at(&self, index: usize) -> LayoutConfig {
+    //     self.layout_list.clone().into_iter().nth(index).unwrap()
+    // }
 }
