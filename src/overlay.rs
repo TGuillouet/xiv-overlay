@@ -59,6 +59,8 @@ pub fn show_overlay(config: &LayoutConfig, shutdown_receiver: Receiver<bool>) {
     }
 
     shutdown_receiver.attach(None, move |_| {
+        // TODO: Send the last position of the window to be saved
+
         window.close();
 
         glib::Continue(true)

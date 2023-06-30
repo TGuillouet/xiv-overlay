@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-use crate::app_config::AppConfig;
+use crate::{app_config::AppConfig, errors::OverlayConfigParseError};
 
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct LayoutConfig {
@@ -16,12 +16,21 @@ pub struct LayoutConfig {
 }
 
 impl LayoutConfig {
-    pub fn from_file(file_path: impl Into<String>) -> Result<LayoutConfig, serde_yaml::Error> {
-        let file_content = std::fs::read_to_string(&file_path.into());
+    pub fn from_file(file_path: impl Into<String>) -> Result<LayoutConfig, OverlayConfigParseError> {
+        let path: &String = &file_path.into();
+        let file_content = std::fs::read_to_string(path);
         
         match file_content {
-            Ok(content) => serde_yaml::from_str(content.as_str()),
-            Err(_) => panic!("Could not parse the configuration")
+            Ok(content) => {
+                let path_cloned = path.clone();
+                serde_yaml::from_str(content.as_str()).or_else(move |_| Err(OverlayConfigParseError(path_cloned)))
+            },
+            Err(error) => {
+                let path_cloned = path.clone();
+                error!("{}", format!("The configuration file {} cound not be opened !", path_cloned));
+                error!("IO Error: {}", error);
+                Err(OverlayConfigParseError(path_cloned))
+            }
         }
     }
 }

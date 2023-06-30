@@ -1,8 +1,12 @@
+extern crate pretty_env_logger;
+#[macro_use] extern crate log;
+
 mod layout_config;
 mod overlay;
 mod app;
 mod app_config;
 mod ui;
+mod errors;
 
 use app::App;
 use gdk::Screen;
@@ -11,12 +15,17 @@ use gtk::{traits::CssProviderExt, StyleContext};
 use crate::app_config::AppConfig;
 
 fn main() {
+    pretty_env_logger::init();
+
     let app_config = AppConfig::default();
 
     if !app_config.layouts_config_path().exists()  {
         std::fs::create_dir_all(app_config.layouts_config_path())
             .expect("Could not create the layout directory");
     }
+
+    glib::set_program_name("Xiv Overlay".into());
+    glib::set_application_name("Xiv Overlay");
 
     gtk::init().unwrap();
 

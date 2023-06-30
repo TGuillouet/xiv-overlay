@@ -74,30 +74,26 @@ impl App {
                 continue;
             }
 
-            let (win_sender, win_receiver) = glib::MainContext::channel(glib::Priority::default());
-            let overlay_cloned = overlay.clone();
-
-            self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender.clone());
-            glib::MainContext::default().invoke(move || {
-                show_overlay(&overlay_cloned.clone(), win_receiver);
-            });
+            self.open_overlay(&overlay);
         }
     }
 
     pub fn load_overlays_list(&self) {
-        println!("Loading the overlays list");
+        info!("Loading the overlays list");
+
         let overlays = load_layouts();
         self.app_container.sidebar.display_overlays_list(overlays);
     }
 
     pub fn display_overlay_details(&mut self, overlay: LayoutConfig) {
-        println!("Displaying the overlay details of {:?}", overlay);
+        info!("Displaying the overlay details of {:?}", overlay);
+
         self.app_container.set_details_visible(true);
         self.app_container.overlay_details.set_current_overlay(overlay);
     }
 
     pub fn toggle_overlay(&mut self, new_state: bool, overlay: LayoutConfig) {
-        println!("Toggle overlay to {:?} {}", overlay.name(), new_state);
+        info!("Toggle overlay to {:?} {}", overlay.name(), new_state);
 
         if new_state {
             self.open_overlay(&overlay);
@@ -141,7 +137,9 @@ impl App {
             self.open_overlay(&overlay);
         }
 
-        self.display_overlay_details(overlay.clone())
+        self.display_overlay_details(overlay.clone());
+
+        info!("Overlay {} saved !", overlay.name());
     }
 
     pub fn delete_overlay(&self, overlay: LayoutConfig) {
