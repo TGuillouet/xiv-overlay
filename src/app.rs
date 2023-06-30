@@ -83,15 +83,13 @@ impl App {
             let overlay_cloned = overlay.clone();
 
             self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender.clone());
-            std::thread::spawn(move || {
-                glib::MainContext::default().invoke(move || {
-                    show_overlay(&overlay_cloned.clone(), win_receiver);
-                });
-                0
+            glib::MainContext::default().invoke(move || {
+                show_overlay(&overlay_cloned.clone(), win_receiver);
             });
         } else {
             if let Some(sender) = self.state.displayed_overlays.get(&overlay.name()) {
                 sender.send(true).unwrap();
+                println!("Here");
             }
         }
 
