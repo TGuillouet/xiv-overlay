@@ -68,27 +68,21 @@ impl OverlayDetails {
         form_box.into()
     }
 
-    pub fn is_current_overlay(&self, overlay: &LayoutConfig) -> bool {
-        if let Some(current_overlay) = &self.current_overlay {
-            return current_overlay.clone() == overlay.clone();
-        }
-        false
-    }
-
     pub fn set_current_overlay(&mut self, overlay: LayoutConfig) {
+        // Important: Disable the events BEFORE assigning new values :)
+        if let Some(signal_handler) = self.switch_handler_id.take() {
+            self.active_state_switch.disconnect(signal_handler);
+        }
+
         let overlay_cloned = overlay.clone();
         let event_sender = self.event_sender.clone();
 
         // Update the form entries
         self.title.set_text(&overlay.name());
         self.name_entry.set_text(&overlay.name());
-        self.active_state_switch.set_state(overlay_cloned.is_active());
+        self.active_state_switch.set_state(overlay.is_active());
 
         self.current_overlay = Some(overlay);
-
-        if let Some(signal_handler) = self.switch_handler_id.take() {
-            self.active_state_switch.disconnect(signal_handler);
-        }
         
         self.switch_handler_id = Some(
             self.active_state_switch.connect_state_set(move |_, new_state| {
@@ -96,8 +90,6 @@ impl OverlayDetails {
                 let overlay = overlay_cloned.clone();
                 glib::MainContext::default().block_on(async move {
                     let _ = event_sender.send(AppAction::ToggleOverlay(new_state, overlay.clone())).await;
-
-                    // TODO: Save the new active state in the file (Not the rest of the config)
                 });
                 Inhibit(true)
             })
