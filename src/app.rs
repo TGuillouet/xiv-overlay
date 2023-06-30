@@ -6,11 +6,12 @@ use gtk::{traits::{WidgetExt, ContainerExt, EntryExt}, Inhibit};
 use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts, save_overlay, remove_overlay_file}, ui::AppContainer, overlay::show_overlay};
 
 pub enum AppAction {
+    NewOverlay,
     LoadOverlaysList,
     SelectOverlay(LayoutConfig),
-    
     ToggleOverlay(bool, LayoutConfig),
-    SaveOverlay(LayoutConfig)
+    SaveOverlay(LayoutConfig),
+    DeleteOverlay(LayoutConfig)
 }
 
 pub struct WindowState {
@@ -58,6 +59,8 @@ impl App {
     fn show(&self) {
         self.window.show_all();
         
+        self.app_container.set_details_visible(false);
+        
         let tx = self.state.event_sender.clone();
         glib::MainContext::default().spawn_local(async move {
             let _ = tx.send(AppAction::LoadOverlaysList).await;
@@ -72,6 +75,7 @@ impl App {
 
     pub fn display_overlay_details(&mut self, overlay: LayoutConfig) {
         println!("Displaying the overlay details of {:?}", overlay);
+        self.app_container.set_details_visible(true);
         self.app_container.overlay_details.set_current_overlay(overlay);
     }
 
@@ -89,7 +93,6 @@ impl App {
         } else {
             if let Some(sender) = self.state.displayed_overlays.get(&overlay.name()) {
                 sender.send(true).unwrap();
-                println!("Here");
             }
         }
 
@@ -108,5 +111,13 @@ impl App {
         
         save_overlay(overlay.clone());
         println!("Overlay {:?} saved !", overlay);
+    }
+
+    pub fn delete_overlay(&self, overlay: LayoutConfig) {
+        remove_overlay_file(overlay.get_file_name());
+    }
+
+    pub fn new_overlay(&mut self) {
+        self.display_overlay_details(LayoutConfig::default());
     }
 }

@@ -8,7 +8,10 @@ use crate::layout_config::LayoutConfig;
 
 pub struct Sidebar {
     pub frame: gtk::Frame,
-    treeview: gtk::TreeView
+    treeview: gtk::TreeView,
+    
+    add_menu_item: gtk::MenuItem,
+    remove_menu_item: gtk::MenuItem,
 }
 
 impl Sidebar {
@@ -20,24 +23,81 @@ impl Sidebar {
         treeview.set_headers_visible(false);
         treeview.set_activate_on_single_click(true);
         Sidebar::append_treeview_column(&treeview, 0);
-    
-        let cloned_sender = event_sender.clone();
-        treeview.connect_row_activated(move |view, path, _column| {
+        sidebar_frame.add(&treeview);
+
+        let item_actions_menu = gtk::Menu::new();
+        let remove_menu_item = gtk::MenuItem::with_label("Delete");
+        item_actions_menu.append(&remove_menu_item);
+        remove_menu_item.show();
+
+        let treeview_actions_menu = gtk::Menu::new();
+        let add_menu_item = gtk::MenuItem::with_label("Add new config");
+        treeview_actions_menu.append(&add_menu_item);
+        add_menu_item.show();
+
+        let sidebar = Self {
+            frame: sidebar_frame,
+            treeview,
+
+            add_menu_item,
+            remove_menu_item
+        };
+
+        sidebar.setup_signals(treeview_actions_menu, item_actions_menu, event_sender);
+
+        sidebar
+    }
+
+    fn setup_signals(&self, treeview_menu: gtk::Menu, treeview_item_menu: gtk::Menu, event_sender: Sender<AppAction>) {
+        let event_sender_clone = event_sender.clone();
+        self.add_menu_item.connect_activate(move |_item| {
+            let _ = glib::MainContext::default().block_on(event_sender_clone.send(AppAction::NewOverlay));
+        });
+        
+        let event_sender_clone = event_sender.clone();
+        let treeview = self.treeview.clone();
+        self.remove_menu_item.connect_activate(move |_item| {
+            let (path, _) = treeview.cursor();
+            let treeview_model = treeview.model().unwrap();
+            let iter = treeview_model.iter(&path.unwrap()).unwrap();
+            let value = treeview_model.value(&iter, 0).get::<String>().unwrap();
+
+            if let Ok(overlay) = get_layout_by_name(&value) {
+                let _ = glib::MainContext::default().block_on(event_sender_clone.send(AppAction::DeleteOverlay(overlay)));
+                let _ = glib::MainContext::default().block_on(event_sender_clone.send(AppAction::LoadOverlaysList));
+            }
+        });
+
+        let event_sender_clone = event_sender.clone();
+        self.treeview.connect_row_activated(move |view, path, _column| {
             let model = view.model().unwrap();
             let iter = model.iter(path).unwrap();
             let value = model.value(&iter, 0).get::<String>().unwrap();
     
             if let Ok(overlay) = get_layout_by_name(&value) {
-                let _ = glib::MainContext::default().block_on(cloned_sender.send(AppAction::SelectOverlay(overlay)));
+                let _ = glib::MainContext::default().block_on(event_sender_clone.send(AppAction::SelectOverlay(overlay)));
             }
         });
-    
-        sidebar_frame.add(&treeview);
-    
-        Self {
-            frame: sidebar_frame,
-            treeview
-        }
+
+        self.treeview.connect_button_press_event(move |treeview, event| {
+            if event.button() == 3 {
+                let selected_item = treeview.path_at_pos(event.position().0 as i32, event.position().1 as i32)
+                    .map(|(path, _, _, _)| {
+                        treeview.set_cursor(&path.unwrap(), None::<&gtk::TreeViewColumn>, false);
+                        treeview.grab_focus();
+                        treeview_item_menu.popup_at_pointer(Some(&event));
+                    });
+
+                // If we do not find any item, show the other menu
+                if selected_item.is_none() {
+                    treeview_menu.popup_at_pointer(Some(&event));
+                }
+
+                return Inhibit(true);
+            }
+
+            Inhibit(false)
+        });
     }
 
     pub fn display_overlays_list(&self, overlays_list: Vec<LayoutConfig>) {

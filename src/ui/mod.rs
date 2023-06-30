@@ -1,5 +1,5 @@
 use async_channel::Sender;
-use gtk::traits::PanedExt;
+use gtk::traits::{PanedExt, WidgetExt, ContainerExt};
 
 use crate::{layout_config::LayoutConfig, app::AppAction};
 
@@ -37,6 +37,16 @@ impl AppContainer {
         };
 
         app_container
+    }
+
+    pub fn set_details_visible(&self, is_visible: bool) {
+        for child in self.overlay_details.container.children() {
+            if is_visible {
+                child.show()
+            } else {
+                child.hide();
+            }
+        }
     }
 }
 
