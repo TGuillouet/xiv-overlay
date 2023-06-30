@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, path::PathBuf};
 
 use async_channel::Sender;
 use gtk::{traits::{WidgetExt, ContainerExt}, Inhibit};
@@ -7,7 +7,10 @@ use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts}
 
 pub enum AppAction {
     LoadOverlaysList,
-    DisplayOverlay(LayoutConfig),
+    SelectOverlay(LayoutConfig),
+    
+    ToggleOverlay(bool, LayoutConfig),
+    SaveOverlay(PathBuf, LayoutConfig)
 }
 
 pub struct WindowState {
@@ -65,8 +68,13 @@ impl App {
         self.app_container.sidebar.display_overlays_list(overlays);
     }
 
-    pub fn display_overlay_details(&self, overlay: LayoutConfig) {
-        println!("Displaying the overlay {:?}", overlay);
+    pub fn display_overlay_details(&mut self, overlay: LayoutConfig) {
+        println!("Displaying the overlay details of {:?}", overlay);
+        self.app_container.overlay_details.set_current_overlay(overlay);
+    }
+
+    pub fn toggle_overlay(&self, new_state: bool, overlay: LayoutConfig) {
+        println!("Toggle overlay to {:?} {}", overlay.name(), new_state);
     }
 }
 

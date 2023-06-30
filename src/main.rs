@@ -37,7 +37,9 @@ fn main() {
         while let Ok(event) = receiver.recv().await {
             match event {
                 app::AppAction::LoadOverlaysList => app.load_overlays_list(),
-                app::AppAction::DisplayOverlay(overlay) => app.display_overlay_details(overlay),
+                app::AppAction::SelectOverlay(overlay) => app.display_overlay_details(overlay),
+                app::AppAction::ToggleOverlay(new_state, overlay) => app.toggle_overlay(new_state, overlay),
+                app::AppAction::SaveOverlay(_, _) => todo!(),
             }
         }
     };

@@ -3,7 +3,7 @@ use gtk::traits::PanedExt;
 
 use crate::{layout_config::LayoutConfig, app::AppAction};
 
-use self::sidebar::Sidebar;
+use self::{sidebar::Sidebar, overlay_infos::OverlayDetails};
 
 pub mod overlay_infos;
 pub mod sidebar;
@@ -16,7 +16,8 @@ pub enum OverlaySignals {
 
 pub struct AppContainer {
     pub container: gtk::Paned,
-    pub sidebar: Sidebar
+    pub sidebar: Sidebar,
+    pub overlay_details: OverlayDetails
 }
 
 impl AppContainer {
@@ -24,14 +25,15 @@ impl AppContainer {
         let container = gtk::Paned::new(gtk::Orientation::Horizontal);
 
         let sidebar = Sidebar::new(event_sender.clone());
-        let overlay_infos_frame = gtk::Frame::new(None);
+        let overlay_details = OverlayDetails::new(event_sender.clone());
         
         container.pack1(&sidebar.frame, false, false);
-        container.pack2(&overlay_infos_frame, true, true);
+        container.pack2(&overlay_details.container, true, true);
 
         let app_container = Self {
             container,
-            sidebar
+            sidebar,
+            overlay_details
         };
 
         app_container

@@ -9,12 +9,9 @@ use crate::layout_config::LayoutConfig;
 pub struct Sidebar {
     pub frame: gtk::Frame,
     treeview: gtk::TreeView
-    // layout_list: Vec<LayoutConfig>,
-    // change_selection_sender: Sender<LayoutConfig>
 }
 
 impl Sidebar {
-    // pub fn new(change_selection_sender: Sender<LayoutConfig>) -> Self {
     pub fn new(event_sender: Sender<AppAction>) -> Self {
         let sidebar_frame = gtk::Frame::new(None);
         sidebar_frame.set_size_request(200, 700);
@@ -31,7 +28,7 @@ impl Sidebar {
             let value = model.value(&iter, 0).get::<String>().unwrap();
     
             if let Ok(overlay) = get_layout_by_name(&value) {
-                let _ = glib::MainContext::default().block_on(cloned_sender.send(AppAction::DisplayOverlay(overlay)));
+                let _ = glib::MainContext::default().block_on(cloned_sender.send(AppAction::SelectOverlay(overlay)));
             }
         });
     
@@ -41,14 +38,7 @@ impl Sidebar {
             frame: sidebar_frame,
             treeview
         }
-        // Self {
-            // layout_list: Vec::new(),
-            // change_selection_sender
-        // }
     }
-
-    // pub fn ui(&mut self) -> gtk::Frame {
-    // }
 
     pub fn display_overlays_list(&self, overlays_list: Vec<LayoutConfig>) {
         let model = Sidebar::create_treeview_entries(overlays_list);
@@ -69,18 +59,9 @@ impl Sidebar {
         let column = gtk::TreeViewColumn::new();
         let cell = gtk::CellRendererText::new();
 
-        // gtk::prelude::TreeViewColumnExt::set_cell_data_func(&column, &cell, Some(Box::new(Sidebar::set_cell_data)));
         gtk::prelude::CellLayoutExt::pack_start(&column, &cell, true);
         gtk::prelude::TreeViewColumnExt::add_attribute(&column, &cell, "text", id);
 
         tree.append_column(&column);
     }
-
-    // fn set_cell_data(column: &gtk::TreeViewColumn, renderer: &gtk::CellRenderer, model: &gtk::TreeModel, iter: &gtk::TreeIter) {
-        
-    // }
-
-    // pub fn get_layout_at(&self, index: usize) -> LayoutConfig {
-    //     self.layout_list.clone().into_iter().nth(index).unwrap()
-    // }
 }

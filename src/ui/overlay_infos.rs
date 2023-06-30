@@ -1,84 +1,60 @@
-use glib::{Sender, SignalHandlerId};
+use async_channel::Sender;
+use glib::SignalHandlerId;
 use gtk::{prelude::*};
 
-use crate::{layout_config::LayoutConfig};
+use crate::{layout_config::LayoutConfig, app::AppAction};
 
-use super::OverlaySignals;
-
-pub struct OverlayInfos {
+pub struct OverlayDetails {
     current_overlay: Option<LayoutConfig>,
-    sender: Sender<OverlaySignals>,
+    event_sender: Sender<AppAction>,
 
-    name_entry: gtk::Entry,
-    
+    pub container: gtk::Box,
+    title: gtk::Label,
+    pub name_entry: gtk::Entry,
     active_state_switch: gtk::Switch,
     switch_handler_id: Option<SignalHandlerId>
 }
 
-impl OverlayInfos {
-    pub fn new(sender: Sender<OverlaySignals>) -> Self {
-        let switch = gtk::Switch::builder()
-            .build();
-        
-        Self {
-            current_overlay: None,
-            sender,
-
-            name_entry: gtk::Entry::new(),
-            active_state_switch: switch,
-            switch_handler_id: None
-        }
-    }
-
-    pub fn ui(&mut self) -> gtk::Widget{
+impl OverlayDetails {
+    pub fn new(sender: Sender<AppAction>) -> Self {
         let infos_container = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .margin(15)
             .build();
-    
-        let header = self.create_header();
-        let form = self.create_form();
-    
-        infos_container.add(&header);
-        infos_container.add(&form);
 
-        infos_container.into()
+        let mut overlay_details = Self {
+            current_overlay: None,
+            event_sender: sender.clone(),
+
+            container: infos_container,
+            title: gtk::Label::default(),
+            active_state_switch: gtk::Switch::default(),
+            name_entry: gtk::Entry::default(),
+
+            switch_handler_id: None
+        };
+    
+        let header = overlay_details.create_header();
+        let form = overlay_details.create_form();
+    
+        overlay_details.container.add(&header);
+        overlay_details.container.add(&form);
+
+        overlay_details
     }
     
-    fn create_header<'a>(&mut self) -> gtk::Widget {
+    fn create_header(&mut self) -> gtk::Widget {
         let header = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .hexpand(true)
             .build();
-        
-        let default_label = if let Some(overlay) = &self.current_overlay {
-            overlay.name()
-        } else {
-            "".to_owned()
-        }; 
-        let title_text = gtk::Label::builder()
-            .label(&default_label)
-            .build();
-        title_text
+
+        self.title
             .style_context()
             .add_class("overlay-title");
         
-        let cloned_config = self.current_overlay.clone();
-        let cloned_sender = self.sender.clone();
-        
-        if let Some(handler_id) = self.switch_handler_id.take() {
-            println!("Disconnect");
-            self.active_state_switch.disconnect(handler_id);
-        }
-        self.switch_handler_id = Some(self.active_state_switch.connect_state_set(move |_, new_state| {
-            if let Some(overlay) = &cloned_config {
-                let signal = OverlaySignals::ChangeActiveState(new_state, overlay.clone());
-                cloned_sender.send(signal).unwrap();
-            }
-            Inhibit(true)
-        }));
     
-        header.add(&title_text);
+        header.add(&self.title);
         header.pack_end(&self.active_state_switch, false, false, 0);
 
         header.into()
@@ -88,9 +64,6 @@ impl OverlayInfos {
         let form_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
 
         form_box.add(&self.name_entry);
-        self.name_entry.connect_changed(move |entry| {
-            println!("New name: {}", entry.text());
-        });
 
         form_box.into()
     }
@@ -103,10 +76,30 @@ impl OverlayInfos {
     }
 
     pub fn set_current_overlay(&mut self, overlay: LayoutConfig) {
+        let overlay_cloned = overlay.clone();
+        let event_sender = self.event_sender.clone();
+
         // Update the form entries
+        self.title.set_text(&overlay.name());
         self.name_entry.set_text(&overlay.name());
+        self.active_state_switch.set_state(overlay_cloned.is_active());
 
         self.current_overlay = Some(overlay);
+
+        if let Some(signal_handler) = self.switch_handler_id.take() {
+            self.active_state_switch.disconnect(signal_handler);
+        }
+        
+        self.switch_handler_id = Some(
+            self.active_state_switch.connect_state_set(move |_, new_state| {
+                let event_sender = event_sender.clone();
+                let overlay = overlay_cloned.clone();
+                glib::MainContext::default().block_on(async move {
+                    let _ = event_sender.send(AppAction::ToggleOverlay(new_state, overlay.clone())).await;
+                });
+                Inhibit(true)
+            })
+        );
     }
 }
 
