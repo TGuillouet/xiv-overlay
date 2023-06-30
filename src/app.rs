@@ -1,9 +1,9 @@
-use std::{sync::Arc, path::PathBuf, collections::HashMap};
+use std::{collections::HashMap};
 
 use async_channel::Sender;
 use gtk::{traits::{WidgetExt, ContainerExt, EntryExt}, Inhibit};
 
-use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts, save_overlay, remove_overlay_file}, ui::AppContainer, overlay::show_overlay};
+use crate::{layout_config::{LayoutConfig, load_layouts, save_overlay, remove_overlay_file}, ui::AppContainer, overlay::show_overlay};
 
 pub enum AppAction {
     NewOverlay,
@@ -20,14 +20,13 @@ pub struct WindowState {
 }
 
 pub struct App {
-    config: Arc<AppConfig>,
     window: gtk::Window,
     app_container: AppContainer,
     state: WindowState
 }
 
 impl App {
-    pub fn new(app_config: AppConfig, sender: Sender<AppAction>) -> Self {
+    pub fn new(sender: Sender<AppAction>) -> Self {
         let window = gtk::Window::new(gtk::WindowType::Toplevel);
         window.set_size_request(1000, 700);
         window.connect_delete_event(|_, _| {
@@ -45,7 +44,6 @@ impl App {
         window.add(&app_container.container);
 
         let app = Self { 
-            config: Arc::new(app_config),
             window,
             app_container,
             state

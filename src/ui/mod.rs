@@ -1,18 +1,12 @@
 use async_channel::Sender;
 use gtk::traits::{PanedExt, WidgetExt, ContainerExt};
 
-use crate::{layout_config::LayoutConfig, app::AppAction};
+use crate::app::AppAction;
 
 use self::{sidebar::Sidebar, overlay_infos::OverlayDetails};
 
 pub mod overlay_infos;
 pub mod sidebar;
-
-pub enum OverlaySignals {
-    ChangeActiveState(bool, LayoutConfig),
-    Save(LayoutConfig),
-    Remove(LayoutConfig),
-}
 
 pub struct AppContainer {
     pub container: gtk::Paned,

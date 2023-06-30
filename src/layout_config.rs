@@ -153,7 +153,7 @@ pub fn remove_overlay_file(overlay_file_name: String) {
         .to_path_buf()
         .join(overlay_file_name);
 
-    std::fs::remove_file(overlay_path);
+    let _ = std::fs::remove_file(overlay_path);
 }
 
 pub fn get_layout_by_name(overlay_name: &str) -> Result<LayoutConfig, String> {
