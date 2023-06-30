@@ -5,14 +5,18 @@ use gtk::{prelude::*};
 use crate::{layout_config::LayoutConfig, app::AppAction};
 
 pub struct OverlayDetails {
-    current_overlay: Option<LayoutConfig>,
+    // current_overlay: Option<LayoutConfig>,
     event_sender: Sender<AppAction>,
 
     pub container: gtk::Box,
     title: gtk::Label,
-    pub name_entry: gtk::Entry,
     active_state_switch: gtk::Switch,
-    switch_handler_id: Option<SignalHandlerId>
+    
+    pub name_entry: gtk::Entry,
+    save_button: gtk::Button,
+
+    switch_handler_id: Option<SignalHandlerId>,
+    save_handler_id: Option<SignalHandlerId>
 }
 
 impl OverlayDetails {
@@ -23,15 +27,18 @@ impl OverlayDetails {
             .build();
 
         let mut overlay_details = Self {
-            current_overlay: None,
+            // current_overlay: None,
             event_sender: sender.clone(),
 
             container: infos_container,
             title: gtk::Label::default(),
             active_state_switch: gtk::Switch::default(),
-            name_entry: gtk::Entry::default(),
 
-            switch_handler_id: None
+            name_entry: gtk::Entry::default(),
+            save_button: gtk::Button::builder().label("Save").build(),
+
+            switch_handler_id: None,
+            save_handler_id: None
         };
     
         let header = overlay_details.create_header();
@@ -64,6 +71,7 @@ impl OverlayDetails {
         let form_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
 
         form_box.add(&self.name_entry);
+        form_box.add(&self.save_button);
 
         form_box.into()
     }
@@ -73,17 +81,17 @@ impl OverlayDetails {
         if let Some(signal_handler) = self.switch_handler_id.take() {
             self.active_state_switch.disconnect(signal_handler);
         }
-
-        let overlay_cloned = overlay.clone();
-        let event_sender = self.event_sender.clone();
+        if let Some(signal_handler) = self.save_handler_id.take() {
+            self.save_button.disconnect(signal_handler);
+        }
 
         // Update the form entries
         self.title.set_text(&overlay.name());
         self.name_entry.set_text(&overlay.name());
         self.active_state_switch.set_state(overlay.is_active());
-
-        self.current_overlay = Some(overlay);
         
+        let overlay_cloned = overlay.clone();
+        let event_sender = self.event_sender.clone();
         self.switch_handler_id = Some(
             self.active_state_switch.connect_state_set(move |_, new_state| {
                 let event_sender = event_sender.clone();
@@ -94,6 +102,22 @@ impl OverlayDetails {
                 Inhibit(true)
             })
         );
+
+        let overlay_cloned = overlay.clone();
+        let event_sender = self.event_sender.clone();
+        self.save_handler_id = Some(
+            self.save_button.connect_clicked(move |_| {
+                let event_sender = event_sender.clone();
+                let overlay_cloned = overlay_cloned.clone();
+                glib::MainContext::default().block_on(async move {
+                    let _ = event_sender.send(AppAction::SaveOverlay(overlay_cloned)).await;
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    let _ = event_sender.send(AppAction::LoadOverlaysList).await;
+                })
+            })
+        );
+
+        // self.current_overlay = Some(overlay)
     }
 }
 

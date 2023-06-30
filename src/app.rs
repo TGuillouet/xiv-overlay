@@ -1,16 +1,16 @@
 use std::{sync::Arc, path::PathBuf, collections::HashMap};
 
 use async_channel::Sender;
-use gtk::{traits::{WidgetExt, ContainerExt}, Inhibit};
+use gtk::{traits::{WidgetExt, ContainerExt, EntryExt}, Inhibit};
 
-use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts, save_overlay}, ui::AppContainer, overlay::show_overlay};
+use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts, save_overlay, remove_overlay_file}, ui::AppContainer, overlay::show_overlay};
 
 pub enum AppAction {
     LoadOverlaysList,
     SelectOverlay(LayoutConfig),
     
     ToggleOverlay(bool, LayoutConfig),
-    SaveOverlay(PathBuf, LayoutConfig)
+    SaveOverlay(LayoutConfig)
 }
 
 pub struct WindowState {
@@ -98,5 +98,17 @@ impl App {
         let mut new_overlay = overlay.clone();
         new_overlay.set_active(new_state);
         save_overlay(new_overlay)
+    }
+
+    pub fn save_overlay(&self, overlay: &mut LayoutConfig) {
+        let new_name = self.app_container.overlay_details.name_entry.text();
+        // Remove the old overlay if the name changed
+        if new_name != overlay.name() {
+            remove_overlay_file(overlay.get_file_name());
+            overlay.set_name(new_name);
+        }
+        
+        save_overlay(overlay.clone());
+        println!("Overlay {:?} saved !", overlay);
     }
 }

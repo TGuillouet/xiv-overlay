@@ -39,7 +39,7 @@ fn main() {
                 app::AppAction::LoadOverlaysList => app.load_overlays_list(),
                 app::AppAction::SelectOverlay(overlay) => app.display_overlay_details(overlay),
                 app::AppAction::ToggleOverlay(new_state, overlay) => app.toggle_overlay(new_state, overlay),
-                app::AppAction::SaveOverlay(_, _) => todo!(),
+                app::AppAction::SaveOverlay(mut overlay) => app.save_overlay(&mut overlay),
             }
         }
     };

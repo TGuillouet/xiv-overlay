@@ -35,6 +35,10 @@ impl Into<String> for LayoutConfig {
 
 impl LayoutConfig {
 
+    pub fn get_file_name(&self) -> String {
+        format!("{}.yaml", self.name.replace(" ", "-").to_lowercase())
+    }
+
     pub fn name(&self) -> String {
         self.name.clone()
     }
@@ -134,11 +138,22 @@ pub fn save_overlay(overlay: LayoutConfig) {
     let overlay_path = app_config
         .layouts_config_path()
         .to_path_buf()
-        .join(format!("{}.yaml", overlay.name().replace(" ", "-").to_lowercase()));
+        .join(overlay.get_file_name());
     
     let overlay_str: String = overlay.into();
     std::fs::write(overlay_path, overlay_str.as_bytes())
         .expect("Could not write the overlay configuration");
+}
+
+pub fn remove_overlay_file(overlay_file_name: String) {
+    let app_config = AppConfig::default();
+    
+    let overlay_path = app_config
+        .layouts_config_path()
+        .to_path_buf()
+        .join(overlay_file_name);
+
+    std::fs::remove_file(overlay_path);
 }
 
 pub fn get_layout_by_name(overlay_name: &str) -> Result<LayoutConfig, String> {
