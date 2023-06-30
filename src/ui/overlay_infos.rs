@@ -17,6 +17,8 @@ pub struct OverlayDetails {
     pub y_pos_spin: gtk::SpinButton,
     pub width_spin: gtk::SpinButton,
     pub height_spin: gtk::SpinButton,
+    pub clickthrough_check: gtk::CheckButton,
+    pub movable_check: gtk::CheckButton,
 
     save_button: gtk::Button,
 
@@ -44,6 +46,8 @@ impl OverlayDetails {
             y_pos_spin: OverlayDetails::create_spinbutton(),
             width_spin: OverlayDetails::create_spinbutton(),
             height_spin: OverlayDetails::create_spinbutton(),
+            clickthrough_check: gtk::CheckButton::with_label("Clickthrough"),
+            movable_check: gtk::CheckButton::with_label("Movable"),
             save_button: gtk::Button::builder().label("Save").build(),
 
             switch_handler_id: None,
@@ -91,6 +95,8 @@ impl OverlayDetails {
         form_box.add(&self.y_pos_spin);
         form_box.add(&self.width_spin);
         form_box.add(&self.height_spin);
+        form_box.add(&self.clickthrough_check);
+        form_box.add(&self.movable_check);
         form_box.add(&self.save_button);
 
         form_box.into()
@@ -109,6 +115,8 @@ impl OverlayDetails {
         self.y_pos_spin.set_value(overlay.y() as f64);
         self.width_spin.set_value(overlay.width() as f64);
         self.height_spin.set_value(overlay.height() as f64);
+        self.clickthrough_check.set_active(overlay.is_clickthrough());
+        self.movable_check.set_active(overlay.is_decoraded());
         
         self.setup_signals(overlay);
     }

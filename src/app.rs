@@ -1,7 +1,8 @@
 use std::{collections::HashMap};
 
 use async_channel::Sender;
-use gtk::{traits::{WidgetExt, ContainerExt, EntryExt, SpinButtonExt}, Inhibit};
+use gtk::prelude::*;
+// use gtk::{traits::{WidgetExt, ContainerExt, EntryExt, SpinButtonExt}, Inhibit};
 
 use crate::{layout_config::{LayoutConfig, load_layouts, save_overlay, remove_overlay_file}, ui::AppContainer, overlay::show_overlay};
 
@@ -99,17 +100,9 @@ impl App {
         println!("Toggle overlay to {:?} {}", overlay.name(), new_state);
 
         if new_state {
-            let (win_sender, win_receiver) = glib::MainContext::channel(glib::Priority::default());
-            let overlay_cloned = overlay.clone();
-
-            self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender.clone());
-            glib::MainContext::default().invoke(move || {
-                show_overlay(&overlay_cloned.clone(), win_receiver);
-            });
+            self.open_overlay(&overlay);
         } else {
-            if let Some(sender) = self.state.displayed_overlays.get(&overlay.name()) {
-                sender.send(true).unwrap();
-            }
+            self.close_overlay(&overlay);
         }
 
         let mut new_overlay = overlay.clone();
@@ -119,6 +112,12 @@ impl App {
 
     pub fn save_overlay(&mut self, overlay: &mut LayoutConfig) {
         let overlay_details = &self.app_container.overlay_details;
+        
+        let need_reload = overlay_details.clickthrough_check.is_active() || overlay_details.movable_check.is_active();
+        if need_reload {
+            self.close_overlay(&overlay);
+        }
+        
         let new_name = overlay_details.name_entry.text();
         // Remove the old overlay if the name changed
         if new_name != overlay.name() {
@@ -131,8 +130,14 @@ impl App {
         overlay.set_y(overlay_details.y_pos_spin.value_as_int());
         overlay.set_width(overlay_details.width_spin.value_as_int());
         overlay.set_height(overlay_details.height_spin.value_as_int());
+        overlay.set_is_clickthrough(overlay_details.clickthrough_check.is_active());
+        overlay.set_is_decorated(overlay_details.movable_check.is_active());
         
         save_overlay(overlay.clone());
+
+        if need_reload {
+            self.open_overlay(&overlay);
+        }
 
         self.display_overlay_details(overlay.clone())
     }
@@ -143,5 +148,21 @@ impl App {
 
     pub fn new_overlay(&mut self) {
         self.display_overlay_details(LayoutConfig::default());
+    }
+
+    pub fn close_overlay(&self, overlay: &LayoutConfig) {
+        if let Some(sender) = self.state.displayed_overlays.get(&overlay.name()) {
+            sender.send(true).unwrap();
+        }
+    }
+
+    fn open_overlay(&mut self, overlay: &LayoutConfig) {
+        let (win_sender, win_receiver) = glib::MainContext::channel(glib::Priority::default());
+        let overlay_cloned = overlay.clone();
+
+        self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender.clone());
+        glib::MainContext::default().invoke(move || {
+            show_overlay(&overlay_cloned.clone(), win_receiver);
+        });
     }
 }

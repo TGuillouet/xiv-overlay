@@ -48,9 +48,6 @@ pub fn show_overlay(config: &LayoutConfig, shutdown_receiver: Receiver<bool>) {
 
     let settings = WebViewExt::settings(&webview).unwrap();
     settings.set_enable_developer_extras(true);
-
-    /*let inspector = webview.get_inspector().unwrap();
-    inspector.show();*/
     
     window.show_all();
     
@@ -61,15 +58,9 @@ pub fn show_overlay(config: &LayoutConfig, shutdown_receiver: Receiver<bool>) {
         gdk_window.input_shape_combine_region(&region, 0, 0);
     }
 
-    window.connect_delete_event(|_, _| {
-        Inhibit(false)
-    });
-
     shutdown_receiver.attach(None, move |_| {
         window.close();
 
         glib::Continue(true)
     });
-
-    // window
 }
