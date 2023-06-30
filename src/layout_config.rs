@@ -33,6 +33,7 @@ impl Into<String> for LayoutConfig {
     }
 }
 
+#[allow(dead_code)]
 impl LayoutConfig {
 
     pub fn get_file_name(&self) -> String {
