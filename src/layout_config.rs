@@ -24,41 +24,87 @@ impl LayoutConfig {
             Err(_) => panic!("Could not parse the configuration")
         }
     }
+}
+
+impl Into<String> for LayoutConfig {
+    fn into(self) -> String {
+        let yaml = serde_yaml::to_string(&self).expect("Could not transform the overlay to yaml");
+        yaml
+    }
+}
+
+impl LayoutConfig {
 
     pub fn name(&self) -> String {
         self.name.clone()
     }
 
+    pub fn set_name(&mut self, name: impl Into<String>) {
+        self.name = name.into()
+    }
+
     pub fn url(&self) -> String {
         self.url.clone()
+    }
+    
+    pub fn set_url(&mut self, url: impl Into<String>) {
+        self.url = url.into()
     }
 
     pub fn x(&self) -> i32 {
         self.x
     }
 
+    pub fn set_x(&mut self, x: i32) {
+        self.x = x
+    }
+    
     pub fn y(&self) -> i32 {
         self.y
     }
+    
+    pub fn set_y(&mut self, y: i32) {
+        self.y = y
+    } 
     
     pub fn width(&self) -> i32 {
         self.width
     }
     
+    pub fn set_width(&mut self, width: i32) {
+        self.width = width
+    } 
+    
     pub fn height(&self) -> i32 {
         self.height
     }
-
+    
+    pub fn set_height(&mut self, height: i32) {
+        self.height = height
+    }
+    
     pub fn is_decoraded(&self) -> bool {
         self.decorated
     }
-
+    
+    pub fn set_is_decorated(&mut self, is_decorated: bool) {
+        self.decorated = is_decorated
+    }
+    
     pub fn is_clickthrough(&self) -> bool {
         self.clickthrough
     }
-
+    
+    pub fn set_is_clickthrough(&mut self, is_clickthrough: bool) {
+        self.clickthrough = is_clickthrough
+    }
+    
     pub fn is_active(&self) -> bool {
         self.active
+    }
+
+    pub fn set_active(&mut self, is_active: bool) {
+        self.active = is_active
     }
 }
 
@@ -80,6 +126,19 @@ pub fn load_layouts() -> Vec<LayoutConfig> {
         }
     }
     layout_configs
+}
+
+pub fn save_overlay(overlay: LayoutConfig) {
+    let app_config = AppConfig::default();
+    
+    let overlay_path = app_config
+        .layouts_config_path()
+        .to_path_buf()
+        .join(format!("{}.yaml", overlay.name().replace(" ", "-").to_lowercase()));
+    
+    let overlay_str: String = overlay.into();
+    std::fs::write(overlay_path, overlay_str.as_bytes())
+        .expect("Could not write the overlay configuration");
 }
 
 pub fn get_layout_by_name(overlay_name: &str) -> Result<LayoutConfig, String> {

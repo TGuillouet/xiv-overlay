@@ -3,7 +3,7 @@ use std::{sync::Arc, path::PathBuf, collections::HashMap};
 use async_channel::Sender;
 use gtk::{traits::{WidgetExt, ContainerExt}, Inhibit};
 
-use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts}, ui::AppContainer, overlay::show_overlay};
+use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts, save_overlay}, ui::AppContainer, overlay::show_overlay};
 
 pub enum AppAction {
     LoadOverlaysList,
@@ -95,5 +95,8 @@ impl App {
             }
         }
 
+        let mut new_overlay = overlay.clone();
+        new_overlay.set_active(new_state);
+        save_overlay(new_overlay)
     }
 }
