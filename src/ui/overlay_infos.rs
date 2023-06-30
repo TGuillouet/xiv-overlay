@@ -96,6 +96,8 @@ impl OverlayDetails {
                 let overlay = overlay_cloned.clone();
                 glib::MainContext::default().block_on(async move {
                     let _ = event_sender.send(AppAction::ToggleOverlay(new_state, overlay.clone())).await;
+
+                    // TODO: Save the new active state in the file (Not the rest of the config)
                 });
                 Inhibit(true)
             })

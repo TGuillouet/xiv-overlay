@@ -1,9 +1,9 @@
-use std::{sync::Arc, path::PathBuf};
+use std::{sync::Arc, path::PathBuf, collections::HashMap};
 
 use async_channel::Sender;
 use gtk::{traits::{WidgetExt, ContainerExt}, Inhibit};
 
-use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts}, ui::AppContainer};
+use crate::{app_config::{AppConfig}, layout_config::{LayoutConfig, load_layouts}, ui::AppContainer, overlay::show_overlay};
 
 pub enum AppAction {
     LoadOverlaysList,
@@ -14,6 +14,7 @@ pub enum AppAction {
 }
 
 pub struct WindowState {
+    pub displayed_overlays: HashMap<String, glib::Sender<bool>>,
     pub event_sender: Sender<AppAction>
 }
 
@@ -34,6 +35,7 @@ impl App {
         });
 
         let state = WindowState {
+            displayed_overlays: HashMap::default(),
             event_sender: sender.clone()
         };
 
@@ -58,7 +60,7 @@ impl App {
         
         let tx = self.state.event_sender.clone();
         glib::MainContext::default().spawn_local(async move {
-            tx.send(AppAction::LoadOverlaysList).await;
+            let _ = tx.send(AppAction::LoadOverlaysList).await;
         });
     }
 
@@ -73,89 +75,25 @@ impl App {
         self.app_container.overlay_details.set_current_overlay(overlay);
     }
 
-    pub fn toggle_overlay(&self, new_state: bool, overlay: LayoutConfig) {
+    pub fn toggle_overlay(&mut self, new_state: bool, overlay: LayoutConfig) {
         println!("Toggle overlay to {:?} {}", overlay.name(), new_state);
+
+        if new_state {
+            let (win_sender, win_receiver) = glib::MainContext::channel(glib::Priority::default());
+            let overlay_cloned = overlay.clone();
+
+            self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender.clone());
+            std::thread::spawn(move || {
+                glib::MainContext::default().invoke(move || {
+                    show_overlay(&overlay_cloned.clone(), win_receiver);
+                });
+                0
+            });
+        } else {
+            if let Some(sender) = self.state.displayed_overlays.get(&overlay.name()) {
+                sender.send(true).unwrap();
+            }
+        }
+
     }
 }
-
-// pub fn init(&mut self) {
-//     let (sender, receiver) = MainContext::channel(Priority::default());
-//     self.sender = Some(sender.clone());
-
-//     let mut win_senders_map = HashMap::<String, Sender<bool>>::new();
-//     receiver.attach(None, move |signal| {
-//         match signal {
-//             OverlaySignals::ChangeActiveState(new_state, overlay_config) => {
-//                 if new_state {
-//                     println!("Activate the overlay: {}", overlay_config.name());
-//                     let (win_sender, win_receiver) = MainContext::channel(Priority::default());
-//                     let cloned_config = overlay_config.clone();
-
-//                     win_senders_map.insert(overlay_config.name(), win_sender.clone());
-//                     std::thread::spawn(move || {
-//                         glib::MainContext::default().invoke(move || {
-//                             show_overlay(&cloned_config.clone(), win_receiver);
-//                         });
-//                         0
-//                     });
-//                 } else {
-//                     println!("Disable the overlay: {}", overlay_config.name());
-//                     if let Some(sender) = win_senders_map.get(&overlay_config.name()) {
-//                         sender.send(true).unwrap();
-//                     }
-//                 }
-//             },
-//             _ => {}
-//         }
-
-//         glib::Continue(true)
-//     });
-// }
-
-// pub fn show(&self) {
-//     let (selection_sender, selection_receiver) = MainContext::channel(Priority::default());
-    
-//     let window = Window::new(WindowType::Toplevel);
-//     window.set_size_request(1000, 700);
-
-//     let layout = gtk::Paned::new(gtk::Orientation::Horizontal);
-//     let mut sidebar = Sidebar::new(selection_sender);
-//     let app_content_frame = gtk::Frame::new(None);
-
-//     layout.pack1(&sidebar.ui(), false, false);
-//     layout.pack2(&app_content_frame, true, false);
-
-//     let overlay_widget = Arc::new(Mutex::new(OverlayInfos::new(
-//         self.sender.clone().unwrap()
-//     )));
-
-//     window.add(&layout);
-
-//     window.show_all();
-
-//     window.connect_delete_event(|_, _| {
-//         gtk::main_quit();
-//         Inhibit(false)
-//     });
-
-//     let overlay_clone = Arc::clone(&overlay_widget);
-//     selection_receiver.attach(None, move |new_overlay: LayoutConfig| {
-//         let mut overlay = overlay_clone.lock().unwrap();
-        
-//         if overlay.is_current_overlay(&new_overlay) {
-//             return glib::Continue(true);
-//         }
-
-//         println!("New displayed overlay {}", new_overlay.name());
-
-//         for children in app_content_frame.children().iter() {
-//             app_content_frame.remove(children);
-//         }
-
-//         overlay.set_current_overlay(new_overlay);
-//         app_content_frame.add(&overlay.ui());
-//         app_content_frame.show_all();
-
-//         glib::Continue(true)
-//     });
-// }
