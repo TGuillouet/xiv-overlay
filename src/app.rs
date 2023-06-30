@@ -1,7 +1,7 @@
 use std::{collections::HashMap};
 
 use async_channel::Sender;
-use gtk::{traits::{WidgetExt, ContainerExt, EntryExt}, Inhibit};
+use gtk::{traits::{WidgetExt, ContainerExt, EntryExt, SpinButtonExt}, Inhibit};
 
 use crate::{layout_config::{LayoutConfig, load_layouts, save_overlay, remove_overlay_file}, ui::AppContainer, overlay::show_overlay};
 
@@ -43,13 +43,14 @@ impl App {
 
         window.add(&app_container.container);
 
-        let app = Self { 
+        let mut app = Self { 
             window,
             app_container,
             state
         };
 
         app.show();
+        app.display_active_overlays();
 
         app
     }
@@ -63,6 +64,23 @@ impl App {
         glib::MainContext::default().spawn_local(async move {
             let _ = tx.send(AppAction::LoadOverlaysList).await;
         });
+    }
+
+    fn display_active_overlays(&mut self) {
+        let all_overlays = load_layouts();
+        for overlay in all_overlays {
+            if !overlay.is_active() {
+                continue;
+            }
+
+            let (win_sender, win_receiver) = glib::MainContext::channel(glib::Priority::default());
+            let overlay_cloned = overlay.clone();
+
+            self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender.clone());
+            glib::MainContext::default().invoke(move || {
+                show_overlay(&overlay_cloned.clone(), win_receiver);
+            });
+        }
     }
 
     pub fn load_overlays_list(&self) {
@@ -96,19 +114,27 @@ impl App {
 
         let mut new_overlay = overlay.clone();
         new_overlay.set_active(new_state);
-        save_overlay(new_overlay)
+        self.save_overlay(&mut new_overlay)
     }
 
-    pub fn save_overlay(&self, overlay: &mut LayoutConfig) {
-        let new_name = self.app_container.overlay_details.name_entry.text();
+    pub fn save_overlay(&mut self, overlay: &mut LayoutConfig) {
+        let overlay_details = &self.app_container.overlay_details;
+        let new_name = overlay_details.name_entry.text();
         // Remove the old overlay if the name changed
         if new_name != overlay.name() {
             remove_overlay_file(overlay.get_file_name());
             overlay.set_name(new_name);
         }
+
+        overlay.set_url(overlay_details.url_entry.text());
+        overlay.set_x(overlay_details.x_pos_spin.value_as_int());
+        overlay.set_y(overlay_details.y_pos_spin.value_as_int());
+        overlay.set_width(overlay_details.width_spin.value_as_int());
+        overlay.set_height(overlay_details.height_spin.value_as_int());
         
         save_overlay(overlay.clone());
-        println!("Overlay {:?} saved !", overlay);
+
+        self.display_overlay_details(overlay.clone())
     }
 
     pub fn delete_overlay(&self, overlay: LayoutConfig) {

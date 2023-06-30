@@ -12,6 +12,7 @@ pub struct OverlayDetails {
     active_state_switch: gtk::Switch,
     
     pub name_entry: gtk::Entry,
+    pub url_entry: gtk::Entry,
     pub x_pos_spin: gtk::SpinButton,
     pub y_pos_spin: gtk::SpinButton,
     pub width_spin: gtk::SpinButton,
@@ -38,6 +39,7 @@ impl OverlayDetails {
             active_state_switch: gtk::Switch::default(),
 
             name_entry: gtk::Entry::default(),
+            url_entry: gtk::Entry::default(),
             x_pos_spin: OverlayDetails::create_spinbutton(),
             y_pos_spin: OverlayDetails::create_spinbutton(),
             width_spin: OverlayDetails::create_spinbutton(),
@@ -67,6 +69,7 @@ impl OverlayDetails {
             .orientation(gtk::Orientation::Horizontal)
             .hexpand(true)
             .build();
+        header.style_context().add_class("overlay-header");
 
         self.title
             .style_context()
@@ -83,6 +86,7 @@ impl OverlayDetails {
         let form_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
 
         form_box.add(&self.name_entry);
+        form_box.add(&self.url_entry);
         form_box.add(&self.x_pos_spin);
         form_box.add(&self.y_pos_spin);
         form_box.add(&self.width_spin);
@@ -100,6 +104,7 @@ impl OverlayDetails {
         self.active_state_switch.set_state(overlay.is_active());
 
         self.name_entry.set_text(&overlay.name());
+        self.url_entry.set_text(&overlay.url());
         self.x_pos_spin.set_value(overlay.x() as f64);
         self.y_pos_spin.set_value(overlay.y() as f64);
         self.width_spin.set_value(overlay.width() as f64);
