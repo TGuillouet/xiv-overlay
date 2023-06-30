@@ -113,7 +113,9 @@ impl App {
     pub fn save_overlay(&mut self, overlay: &mut LayoutConfig) {
         let overlay_details = &self.app_container.overlay_details;
         
-        let need_reload = overlay_details.clickthrough_check.is_active() || overlay_details.movable_check.is_active();
+        let need_reload = 
+            overlay_details.clickthrough_check.is_active() != overlay.is_clickthrough()||
+            overlay_details.movable_check.is_active() != overlay.is_decoraded();
         if need_reload {
             self.close_overlay(&overlay);
         }
