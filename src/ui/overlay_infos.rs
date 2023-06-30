@@ -5,7 +5,6 @@ use gtk::{prelude::*};
 use crate::{layout_config::LayoutConfig, app::AppAction};
 
 pub struct OverlayDetails {
-    // current_overlay: Option<LayoutConfig>,
     event_sender: Sender<AppAction>,
 
     pub container: gtk::Box,
@@ -27,7 +26,6 @@ impl OverlayDetails {
             .build();
 
         let mut overlay_details = Self {
-            // current_overlay: None,
             event_sender: sender.clone(),
 
             container: infos_container,
@@ -116,8 +114,6 @@ impl OverlayDetails {
                 })
             })
         );
-
-        // self.current_overlay = Some(overlay)
     }
 }
 
