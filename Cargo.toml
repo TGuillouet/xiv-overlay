@@ -1,5 +1,5 @@
 [package]
-name = "overlay-ff14"
+name = "xivoverlay"
 version = "0.1.0"
 edition = "2021"
 
