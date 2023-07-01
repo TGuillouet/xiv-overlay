@@ -42,7 +42,6 @@ impl Into<String> for LayoutConfig {
     }
 }
 
-#[allow(dead_code)]
 impl LayoutConfig {
 
     pub fn get_file_name(&self) -> String {
@@ -142,7 +141,7 @@ pub fn load_layouts() -> Vec<LayoutConfig> {
     layout_configs
 }
 
-pub fn save_overlay(overlay: LayoutConfig) {
+pub fn save_overlay(overlay: LayoutConfig) -> Result<(), std::io::Error> {
     let app_config = AppConfig::default();
     
     let overlay_path = app_config
@@ -152,10 +151,9 @@ pub fn save_overlay(overlay: LayoutConfig) {
     
     let overlay_str: String = overlay.into();
     std::fs::write(overlay_path, overlay_str.as_bytes())
-        .expect("Could not write the overlay configuration");
 }
 
-pub fn remove_overlay_file(overlay_file_name: String) {
+pub fn remove_overlay_file(overlay_file_name: String) -> Result<(), std::io::Error> {
     let app_config = AppConfig::default();
     
     let overlay_path = app_config
@@ -163,7 +161,7 @@ pub fn remove_overlay_file(overlay_file_name: String) {
         .to_path_buf()
         .join(overlay_file_name);
 
-    let _ = std::fs::remove_file(overlay_path);
+    std::fs::remove_file(overlay_path)
 }
 
 pub fn get_layout_by_name(overlay_name: &str) -> Result<LayoutConfig, String> {

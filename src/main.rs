@@ -49,7 +49,7 @@ fn main() {
                 app::AppAction::SelectOverlay(overlay) => app.display_overlay_details(overlay),
                 app::AppAction::ToggleOverlay(new_state, overlay) => app.toggle_overlay(new_state, overlay),
                 app::AppAction::SaveOverlay(mut overlay) => app.save_overlay(&mut overlay),
-                app::AppAction::DeleteOverlay(overlay) => app.delete_overlay(overlay),
+                app::AppAction::DeleteOverlay(overlay) => app.delete_overlay(&overlay),
                 app::AppAction::NewOverlay => app.new_overlay(),
             }
         }

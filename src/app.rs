@@ -110,17 +110,16 @@ impl App {
         let overlay_details = &self.app_container.overlay_details;
         
         let need_reload = 
-            overlay_details.clickthrough_check.is_active() != overlay.is_clickthrough()||
-            overlay_details.movable_check.is_active() != overlay.is_decoraded();
+        overlay_details.clickthrough_check.is_active() != overlay.is_clickthrough()||
+        overlay_details.movable_check.is_active() != overlay.is_decoraded();
         if need_reload {
             self.close_overlay(&overlay);
         }
         
-        let new_name = overlay_details.name_entry.text();
-        // Remove the old overlay if the name changed
-        if new_name != overlay.name() {
-            remove_overlay_file(overlay.get_file_name());
-            overlay.set_name(new_name);
+        let old_overlay= overlay.clone();
+        let need_delete = overlay_details.name_entry.text() != old_overlay.name();
+        if need_delete {
+            overlay.set_name(overlay_details.name_entry.text());
         }
 
         overlay.set_url(overlay_details.url_entry.text());
@@ -131,19 +130,33 @@ impl App {
         overlay.set_is_clickthrough(overlay_details.clickthrough_check.is_active());
         overlay.set_is_decorated(overlay_details.movable_check.is_active());
         
-        save_overlay(overlay.clone());
+        match save_overlay(overlay.clone()) {
+            Ok(_) => {
+                // Remove the old overlay if the name changed
+                if need_delete {
+                    self.delete_overlay(&old_overlay);
+                }
 
-        if need_reload {
-            self.open_overlay(&overlay);
+                if need_reload {
+                    self.open_overlay(&overlay);
+                }
+        
+                self.display_overlay_details(overlay.clone());
+        
+                info!("Overlay {} saved !", overlay.name());
+            },
+            Err(error) => {
+                error!("Could not save the overlay ! Error {:?}", error);
+                self.show_dialog("Error", error.to_string().as_str());
+            },
         }
 
-        self.display_overlay_details(overlay.clone());
-
-        info!("Overlay {} saved !", overlay.name());
     }
 
-    pub fn delete_overlay(&self, overlay: LayoutConfig) {
-        remove_overlay_file(overlay.get_file_name());
+    pub fn delete_overlay(&self, overlay: &LayoutConfig) {
+        if let Err(error) = remove_overlay_file(overlay.get_file_name()) {
+            self.show_dialog("Error", error.to_string().as_str());
+        }
     }
 
     pub fn new_overlay(&mut self) {
@@ -164,5 +177,14 @@ impl App {
         glib::MainContext::default().invoke(move || {
             show_overlay(&overlay_cloned.clone(), win_receiver);
         });
+    }
+
+    fn show_dialog(&self, title: &str, message: &str) -> () {
+        let dialog_window = gtk::MessageDialog::builder()
+            .title(title)
+            .message_type(gtk::MessageType::Error)
+            .text(message)
+            .build();
+        dialog_window.show();
     }
 }
