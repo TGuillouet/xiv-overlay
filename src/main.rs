@@ -30,7 +30,7 @@ fn main() {
     gtk::init().unwrap();
 
     let css_provider = gtk::CssProvider::new();
-    css_provider.load_from_path("./styles/app.css")
+    css_provider.load_from_data(include_str!("./styles/app.css").as_bytes())
         .expect("Could not load the stylesheet");
     StyleContext::add_provider_for_screen(
         &Screen::default().expect("Could not fetch the gdk screen"), 

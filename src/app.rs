@@ -108,10 +108,7 @@ impl App {
     pub fn save_overlay(&mut self, overlay: &mut LayoutConfig) {
         let overlay_details = &self.app_container.overlay_details;
         
-        let need_reload = 
-        overlay_details.clickthrough_check.is_active() != overlay.is_clickthrough()||
-        overlay_details.movable_check.is_active() != overlay.is_decoraded();
-        if need_reload {
+        if overlay.is_active() {
             self.close_overlay(overlay);
         }
         
@@ -132,11 +129,11 @@ impl App {
         match save_overlay(overlay.clone()) {
             Ok(_) => {
                 // Remove the old overlay if the name changed
-                if need_delete {
+                if need_delete && !old_overlay.name().is_empty() {
                     self.delete_overlay(&old_overlay);
                 }
 
-                if need_reload {
+                if overlay.is_active() {
                     self.open_overlay(overlay);
                 }
         
@@ -146,7 +143,7 @@ impl App {
             },
             Err(error) => {
                 error!("Could not save the overlay ! Error {:?}", error);
-                self.show_dialog("Error", error.to_string().as_str());
+                self.show_dialog("Error while saving the overlay", error.to_string().as_str());
             },
         }
 
@@ -154,8 +151,24 @@ impl App {
 
     pub fn delete_overlay(&self, overlay: &LayoutConfig) {
         if let Err(error) = remove_overlay_file(overlay.get_file_name()) {
-            self.show_dialog("Error", error.to_string().as_str());
+            self.show_dialog("Error while deleting the old file", error.to_string().as_str());
+            return;
         }
+
+        self.close_overlay(overlay);
+
+        // Reset the inputs to default
+        let overlay_details = &self.app_container.overlay_details;
+        overlay_details.url_entry.set_text("");
+        overlay_details.x_pos_spin.set_value(0.0);
+        overlay_details.y_pos_spin.set_value(0.0);
+        overlay_details.width_spin.set_value(0.0);
+        overlay_details.height_spin.set_value(0.0);
+        overlay_details.clickthrough_check.set_active(false);
+        overlay_details.movable_check.set_active(false);
+
+        // Hide the container
+        self.app_container.set_details_visible(false);
     }
 
     pub fn new_overlay(&mut self) {
