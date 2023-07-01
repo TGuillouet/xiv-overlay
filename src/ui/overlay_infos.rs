@@ -34,7 +34,7 @@ impl OverlayDetails {
             .build();
 
         let mut overlay_details = Self {
-            event_sender: sender.clone(),
+            event_sender: sender,
 
             container: infos_container,
             title: gtk::Label::default(),
@@ -135,12 +135,11 @@ impl OverlayDetails {
             })
         );
     
-        let overlay_cloned = overlay.clone();
         let event_sender = self.event_sender.clone();
         self.save_handler_id = Some(
             self.save_button.connect_clicked(move |_| {
                 let event_sender = event_sender.clone();
-                let overlay_cloned = overlay_cloned.clone();
+                let overlay_cloned = overlay.clone();
                 glib::MainContext::default().block_on(async move {
                     let _ = event_sender.send(AppAction::SaveOverlay(overlay_cloned)).await;
                     std::thread::sleep(std::time::Duration::from_millis(500));

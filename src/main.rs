@@ -40,7 +40,7 @@ fn main() {
 
     let (sender, receiver) = async_channel::unbounded();
 
-    let mut app = App::new(sender.clone());
+    let mut app = App::new(sender);
 
     let event_handler = async move {
         while let Ok(event) = receiver.recv().await {

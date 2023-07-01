@@ -68,14 +68,13 @@ impl Sidebar {
             }
         });
 
-        let event_sender_clone = event_sender.clone();
         self.treeview.connect_row_activated(move |view, path, _column| {
             let model = view.model().unwrap();
             let iter = model.iter(path).unwrap();
             let value = model.value(&iter, 0).get::<String>().unwrap();
     
             if let Ok(overlay) = get_layout_by_name(&value) {
-                let _ = glib::MainContext::default().block_on(event_sender_clone.send(AppAction::SelectOverlay(overlay)));
+                let _ = glib::MainContext::default().block_on(event_sender.send(AppAction::SelectOverlay(overlay)));
             }
         });
 
@@ -85,12 +84,12 @@ impl Sidebar {
                     .map(|(path, _, _, _)| {
                         treeview.set_cursor(&path.unwrap(), None::<&gtk::TreeViewColumn>, false);
                         treeview.grab_focus();
-                        treeview_item_menu.popup_at_pointer(Some(&event));
+                        treeview_item_menu.popup_at_pointer(Some(event));
                     });
 
                 // If we do not find any item, show the other menu
                 if selected_item.is_none() {
-                    treeview_menu.popup_at_pointer(Some(&event));
+                    treeview_menu.popup_at_pointer(Some(event));
                 }
 
                 return Inhibit(true);

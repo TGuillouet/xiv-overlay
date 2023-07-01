@@ -19,18 +19,16 @@ impl AppContainer {
         let container = gtk::Paned::new(gtk::Orientation::Horizontal);
 
         let sidebar = Sidebar::new(event_sender.clone());
-        let overlay_details = OverlayDetails::new(event_sender.clone());
+        let overlay_details = OverlayDetails::new(event_sender);
         
         container.pack1(&sidebar.frame, false, false);
         container.pack2(&overlay_details.container, true, true);
 
-        let app_container = Self {
+        Self {
             container,
             sidebar,
             overlay_details
-        };
-
-        app_container
+        }
     }
 
     pub fn set_details_visible(&self, is_visible: bool) {

@@ -39,7 +39,7 @@ impl App {
             event_sender: sender.clone()
         };
 
-        let app_container = AppContainer::new(sender.clone());
+        let app_container = AppContainer::new(sender);
 
         window.add(&app_container.container);
 
@@ -112,7 +112,7 @@ impl App {
         overlay_details.clickthrough_check.is_active() != overlay.is_clickthrough()||
         overlay_details.movable_check.is_active() != overlay.is_decoraded();
         if need_reload {
-            self.close_overlay(&overlay);
+            self.close_overlay(overlay);
         }
         
         let old_overlay= overlay.clone();
@@ -137,7 +137,7 @@ impl App {
                 }
 
                 if need_reload {
-                    self.open_overlay(&overlay);
+                    self.open_overlay(overlay);
                 }
         
                 self.display_overlay_details(overlay.clone());
@@ -172,13 +172,13 @@ impl App {
         let (win_sender, win_receiver) = glib::MainContext::channel(glib::Priority::default());
         let overlay_cloned = overlay.clone();
 
-        self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender.clone());
+        self.state.displayed_overlays.insert(overlay_cloned.name(), win_sender);
         glib::MainContext::default().invoke(move || {
             show_overlay(&overlay_cloned.clone(), win_receiver);
         });
     }
 
-    fn show_dialog(&self, title: &str, message: &str) -> () {
+    fn show_dialog(&self, title: &str, message: &str) {
         let dialog_window = gtk::MessageDialog::builder()
             .title(title)
             .message_type(gtk::MessageType::Error)

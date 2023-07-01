@@ -23,6 +23,7 @@ impl LayoutConfig {
         match file_content {
             Ok(content) => {
                 let path_cloned = path.clone();
+                #[allow(clippy::bind_instead_of_map)]
                 serde_yaml::from_str(content.as_str()).or_else(move |_| Err(OverlayConfigParseError(path_cloned)))
             },
             Err(error) => {
@@ -35,17 +36,16 @@ impl LayoutConfig {
     }
 }
 
-impl Into<String> for LayoutConfig {
-    fn into(self) -> String {
-        let yaml = serde_yaml::to_string(&self).expect("Could not transform the overlay to yaml");
-        yaml
+impl From<LayoutConfig> for String {
+    fn from(value: LayoutConfig) -> String {
+        serde_yaml::to_string(&value).expect("Could not transform the overlay to yaml")
     }
 }
 
 impl LayoutConfig {
 
     pub fn get_file_name(&self) -> String {
-        format!("{}.yaml", self.name.replace(" ", "-").to_lowercase())
+        format!("{}.yaml", self.name.replace(' ', "-").to_lowercase())
     }
 
     pub fn name(&self) -> String {
@@ -125,19 +125,16 @@ pub fn load_layouts() -> Vec<LayoutConfig> {
     let app_config = AppConfig::default();
     let layout_config_path = app_config.layouts_config_path();
     let mut layout_configs: Vec<LayoutConfig> = Vec::new();
+
     let read_result = std::fs::read_dir(layout_config_path).expect("Could not read the layouts path");
-    for file_result in read_result {
-        match file_result {
-            Ok(file) => {
-                if let Ok(config) = LayoutConfig::from_file(file.path().to_str().unwrap().to_string()) {
-                    layout_configs.push(
-                        config
-                    );
-                }
-            },
-            Err(_) => {},
+    for file in read_result.flatten() {
+        if let Ok(config) = LayoutConfig::from_file(file.path().to_str().unwrap().to_string()) {
+            layout_configs.push(
+                config
+            );
         }
     }
+
     layout_configs
 }
 
@@ -167,7 +164,7 @@ pub fn remove_overlay_file(overlay_file_name: String) -> Result<(), std::io::Err
 pub fn get_layout_by_name(overlay_name: &str) -> Result<LayoutConfig, String> {
     let overlays = load_layouts();
     for overlay in overlays.iter() {
-        if overlay.name() == overlay_name.to_owned() {
+        if overlay.name() == *overlay_name {
             return Ok(overlay.clone())
         }
     }
