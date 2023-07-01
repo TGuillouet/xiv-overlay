@@ -2,7 +2,6 @@ use std::{collections::HashMap};
 
 use async_channel::Sender;
 use gtk::prelude::*;
-// use gtk::{traits::{WidgetExt, ContainerExt, EntryExt, SpinButtonExt}, Inhibit};
 
 use crate::{layout_config::{LayoutConfig, load_layouts, save_overlay, remove_overlay_file}, ui::AppContainer, overlay::show_overlay};
 
