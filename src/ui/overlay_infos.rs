@@ -1,6 +1,6 @@
 use async_channel::Sender;
 use glib::SignalHandlerId;
-use gtk::{prelude::*};
+use gtk::prelude::*;
 
 use crate::{layout_config::LayoutConfig, app::AppAction};
 
@@ -87,19 +87,51 @@ impl OverlayDetails {
     }
 
     fn create_form(&self) -> gtk::Widget {
-        let form_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        let form_box = gtk::Box::new(gtk::Orientation::Vertical, 20);
+        form_box.set_margin_top(30);
 
-        form_box.add(&self.name_entry);
-        form_box.add(&self.url_entry);
-        form_box.add(&self.x_pos_spin);
-        form_box.add(&self.y_pos_spin);
-        form_box.add(&self.width_spin);
-        form_box.add(&self.height_spin);
+        form_box.add(&self.create_form_entry("Name", &self.name_entry));
+        form_box.add(&self.create_form_entry("Overlay url", &self.url_entry));
+        form_box.add(&self.create_form_spinbox("X position", &self.x_pos_spin));
+        form_box.add(&self.create_form_spinbox("Y position", &self.y_pos_spin));
+        form_box.add(&self.create_form_spinbox("Width", &self.width_spin));
+        form_box.add(&self.create_form_spinbox("Height", &self.height_spin));
+
+        self.clickthrough_check.set_margin_start(50);
         form_box.add(&self.clickthrough_check);
+
+        self.movable_check.set_margin_start(50);
         form_box.add(&self.movable_check);
+
         form_box.add(&self.save_button);
 
         form_box.into()
+    }
+
+    fn create_form_entry(&self, name: &str, widget: &gtk::Entry) -> gtk::Box {
+        let form_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        form_box.set_hexpand(true);
+
+        let label = gtk::Label::new(Some(&name));
+        label.set_size_request(100, 30);
+        form_box.add(&label);
+        widget.set_hexpand(true);
+        form_box.add(widget);
+
+        form_box
+    }
+
+    fn create_form_spinbox(&self, name: &str, widget: &gtk::SpinButton) -> gtk::Box {
+        let form_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        form_box.set_hexpand(true);
+
+        let label = gtk::Label::new(Some(&name));
+        label.set_size_request(100, 30);
+        form_box.add(&label);
+        widget.set_hexpand(true);
+        form_box.add(widget);
+
+        form_box
     }
 
     pub fn set_current_overlay(&mut self, overlay: LayoutConfig) {
